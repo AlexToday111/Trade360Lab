@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRuns } from "@/components/run/run-store";
+import { ChartCard } from "@/components/shared/chart-card";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChartCard } from "@/components/charts/chart-card";
-import { EmptyState } from "@/components/layout/empty-state";
+import { useRuns } from "@/features/runs/store/run-store";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { equityCurve } from "@/lib/mock-data/charts";
+import { equityCurve } from "@/lib/demo-data/charts";
 
 const lineColors = [
   "hsl(var(--chart-1))",

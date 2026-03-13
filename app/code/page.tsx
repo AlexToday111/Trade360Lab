@@ -14,14 +14,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ResizableHandle } from "@/components/layout/resizable-handle";
-import { FileTree } from "@/components/panels/file-tree";
-import { fileTree, pinnedFiles } from "@/lib/mock-data/files";
-import { consoleLines, logLines } from "@/lib/mock-data/logs";
-import { useRuns } from "@/components/run/run-store";
-import { createMockRun } from "@/lib/mock-data/factory";
-import { DataContractIndicator } from "@/components/run/data-contract";
-import { RunPreview } from "@/components/run/run-preview";
+import { ResizableHandle } from "@/components/shared/resizable-handle";
+import { FileTree } from "@/features/code/components/file-tree";
+import { DataContractIndicator } from "@/features/runs/components/data-contract";
+import { RunPreview } from "@/features/runs/components/run-preview";
+import { useRuns } from "@/features/runs/store/run-store";
+import { createMockRun } from "@/lib/demo-data/factory";
+import { fileTree, pinnedFiles } from "@/lib/demo-data/files";
+import { consoleLines, logLines } from "@/lib/demo-data/logs";
 
 const codeLines = [
   "def generate_signals(market, features):",

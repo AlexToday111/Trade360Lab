@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ChartCard } from "@/components/shared/chart-card";
+import { OhlcPreviewChart } from "@/features/runs/charts/run-charts";
 import {
   dataSources,
   datasetVersions,
   pipelineSteps,
   dataQuality,
   previewRows,
-} from "@/lib/mock-data/datasets";
-import { ChartCard } from "@/components/charts/chart-card";
-import { OhlcPreviewChart } from "@/components/charts/run-charts";
+} from "@/lib/demo-data/datasets";
 import { getDataSourceStatusLabel, getDataSourceTypeLabel } from "@/lib/ui-text";
 
 export default function DataPage() {

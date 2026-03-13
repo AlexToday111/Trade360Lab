@@ -1,7 +1,7 @@
 "use client";
 
 import { Run } from "@/lib/types";
-import { RunDiffIndicators, RunStatusBadge } from "@/components/run/run-badges";
+import { RunDiffIndicators, RunStatusBadge } from "@/features/runs/components/run-badges";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Download, GitCompare, Copy, Repeat2, FileText, Upload } from "lucide-react";

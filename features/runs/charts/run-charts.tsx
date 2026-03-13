@@ -19,7 +19,7 @@ import {
   underwaterSeries,
   returnsHistogram,
   ohlcPreview,
-} from "@/lib/mock-data/charts";
+} from "@/lib/demo-data/charts";
 
 const axisProps = {
   tick: { fill: "hsl(var(--muted-foreground))", fontSize: 11 },

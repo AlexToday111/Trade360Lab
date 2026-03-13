@@ -12,7 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LogoPlaceholder } from "@/components/layout/logo-placeholder";
+import { LogoPlaceholder } from "@/components/shell/logo-placeholder";
 
 const SHOW_DEPLOY = false;
 

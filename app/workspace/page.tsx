@@ -4,11 +4,11 @@ import { FolderOpen, Plus, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { projects } from "@/lib/mock-data/projects";
-import { datasetVersions } from "@/lib/mock-data/datasets";
-import { useRuns } from "@/components/run/run-store";
-import { RunStatusBadge } from "@/components/run/run-badges";
-import { EmptyState } from "@/components/layout/empty-state";
+import { EmptyState } from "@/components/shared/empty-state";
+import { RunStatusBadge } from "@/features/runs/components/run-badges";
+import { useRuns } from "@/features/runs/store/run-store";
+import { datasetVersions } from "@/lib/demo-data/datasets";
+import { projects } from "@/lib/demo-data/projects";
 
 export default function WorkspacePage() {
   const { runs } = useRuns();

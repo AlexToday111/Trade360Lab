@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { projects } from "@/lib/mock-data/projects";
+import { projects } from "@/lib/demo-data/projects";
 
 export function Topbar() {
   const searchRef = useRef<HTMLInputElement>(null);

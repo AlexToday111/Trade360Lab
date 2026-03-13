@@ -1,8 +1,8 @@
 "use client";
 
 import { ReactNode } from "react";
-import { ClientOnly } from "@/components/layout/client-only";
-import { LoadingState } from "@/components/layout/loading-state";
+import { ClientOnly } from "@/components/shared/client-only";
+import { LoadingState } from "@/components/shared/loading-state";
 
 export function ChartCard({
   title,

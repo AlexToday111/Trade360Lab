@@ -1,24 +1,24 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { RunHeader } from "@/components/run/run-header";
-import { MetricCard } from "@/components/run/metric-card";
-import { ChartCard } from "@/components/charts/chart-card";
+import { ChartCard } from "@/components/shared/chart-card";
+import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingState } from "@/components/shared/loading-state";
 import {
   EquityChart,
   DrawdownChart,
   UnderwaterChart,
   ReturnsHistogramChart,
-} from "@/components/charts/run-charts";
-import { useRuns } from "@/components/run/run-store";
-import { TradesTable } from "@/components/tables/trades-table";
+} from "@/features/runs/charts/run-charts";
+import { MetricCard } from "@/features/runs/components/metric-card";
+import { RunHeader } from "@/features/runs/components/run-header";
+import { TradesTable } from "@/features/runs/components/trades-table";
+import { useRuns } from "@/features/runs/store/run-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { logLines } from "@/lib/mock-data/logs";
-import { trades } from "@/lib/mock-data/trades";
-import { EmptyState } from "@/components/layout/empty-state";
-import { LoadingState } from "@/components/layout/loading-state";
+import { logLines } from "@/lib/demo-data/logs";
+import { trades } from "@/lib/demo-data/trades";
 
 export default function RunDetailsPage() {
   const params = useParams();

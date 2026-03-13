@@ -4,7 +4,7 @@ import { Run } from "@/lib/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RunStatusBadge } from "@/components/run/run-badges";
+import { RunStatusBadge } from "@/features/runs/components/run-badges";
 import { getRunTagLabel } from "@/lib/ui-text";
 
 export function RunsTable({

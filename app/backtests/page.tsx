@@ -6,8 +6,8 @@ import { Filter, Download, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useRuns } from "@/components/run/run-store";
-import { RunsTable } from "@/components/tables/runs-table";
+import { RunsTable } from "@/features/runs/components/runs-table";
+import { useRuns } from "@/features/runs/store/run-store";
 
 export default function BacktestsPage() {
   const router = useRouter();

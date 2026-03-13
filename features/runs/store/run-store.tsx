@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { Run } from "@/lib/types";
-import { initialRuns } from "@/lib/mock-data/runs";
+import { initialRuns } from "@/lib/demo-data/runs";
 
 type RunStore = {
   runs: Run[];

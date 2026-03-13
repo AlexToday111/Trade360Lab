@@ -1,6 +1,6 @@
 "use client";
 
-import { TradeRow } from "@/lib/mock-data/trades";
+import { TradeRow } from "@/lib/demo-data/trades";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getTradeSideLabel } from "@/lib/ui-text";
 

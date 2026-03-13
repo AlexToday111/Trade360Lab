@@ -1,7 +1,7 @@
 "use client";
 
 import { File, Folder, ChevronRight } from "lucide-react";
-import { FileNode } from "@/lib/mock-data/files";
+import { FileNode } from "@/lib/demo-data/files";
 
 function TreeNode({ node, depth = 0 }: { node: FileNode; depth?: number }) {
   return (
