@@ -1,36 +1,182 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# TradeLab
 
-## Getting Started
+TradeLab — это демонстрационный интерфейс для платформы исследования, запуска и сравнения алгоритмических торговых стратегий. Проект реализован как фронтенд на Next.js и сейчас работает на локальных мок-данных без реального бэкенда.
 
-First, run the development server:
+Основная идея интерфейса — строить UX вокруг запуска стратегии: от выбора проекта и датасета до просмотра результатов, артефактов и сравнения нескольких прогонов.
+
+## Что есть в проекте
+
+- русифицированный интерфейс с минималистичным shell;
+- рабочие экраны `workspace`, `code`, `data`, `backtests`, `runs/[id]`, `compare`;
+- состояние запусков в клиентском store;
+- демонстрационные таблицы, графики и панели на мок-данных;
+- архив с исходным scaffold-проектом, вынесенный из активной структуры.
+
+## Технологии
+
+- Next.js 16
+- React 18
+- TypeScript
+- Tailwind CSS
+- Radix UI
+- Recharts
+- react-resizable-panels
+
+## Быстрый старт
+
+Требования:
+
+- Node.js 20+
+- npm 10+
+
+Установка и запуск:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Приложение будет доступно по адресу `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Сборка production-версии:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+Проверка типов:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx tsc --noEmit
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Доступные команды
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+- `npm run dev` — локальный dev-сервер Next.js
+- `npm run build` — production-сборка
+- `npm run start` — запуск production-сборки
+- `npm run lint` — линтинг проекта
 
-## Deploy on Vercel
+## Структура проекта
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+.
+├── app/                    # маршруты App Router
+├── archive/                # вынесенные из активной разработки архивы
+├── components/
+│   ├── shell/              # каркас приложения: sidebar, topbar, shell
+│   ├── shared/             # общие составные компоненты и состояния
+│   └── ui/                 # базовые UI-примитивы
+├── docs/                   # проектная документация
+├── features/
+│   ├── code/               # компоненты для code-экрана
+│   └── runs/               # доменная логика запусков, таблицы, графики, store
+├── lib/
+│   ├── demo-data/          # мок-данные и фабрики для демо-сценариев
+│   ├── types/              # доменные типы
+│   ├── ui-text.ts          # единые текстовые маппинги UI
+│   └── utils.ts            # общие утилиты
+├── public/                 # статические ассеты
+└── styles/                 # дизайн-токены и общие стили
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Роли директорий
+
+### `app/`
+
+Здесь лежат страницы Next.js App Router и корневые провайдеры. Маршруты максимально тонкие: они собирают экран из feature- и shared-компонентов, но не хранят внутри себя лишнюю инфраструктуру.
+
+### `components/shell/`
+
+Каркас интерфейса:
+
+- `app-shell.tsx` — общий layout приложения;
+- `sidebar.tsx` — левая навигация;
+- `topbar.tsx` — верхняя панель;
+- `logo-placeholder.tsx` — временный слот под логотип.
+
+### `components/shared/`
+
+Переиспользуемые составные компоненты, которые не относятся к одному конкретному домену:
+
+- карточка графика;
+- empty/loading состояния;
+- client-only обертка;
+- handle для ресайз-панелей.
+
+### `components/ui/`
+
+Низкоуровневые UI-примитивы. Это слой, из которого собираются все остальные экраны и компоненты.
+
+### `features/runs/`
+
+Главная доменная зона проекта:
+
+- `components/` — карточки метрик, хедер запуска, таблицы, индикаторы;
+- `charts/` — графики equity, drawdown, histogram и preview;
+- `store/` — клиентское состояние запусков.
+
+### `features/code/`
+
+Содержит специфичные компоненты для code-экрана. Сейчас здесь лежит дерево файлов, но именно эта зона будет расширяться по мере развития редактора, панели проблем и консоли.
+
+### `lib/demo-data/`
+
+Вся демонстрационная информация лежит отдельно от UI:
+
+- проекты;
+- версии датасетов;
+- запуски;
+- трейды;
+- логи;
+- фабрики тестовых запусков.
+
+Это позволяет в будущем заменить мок-источники на API без переписывания всего интерфейса.
+
+### `docs/`
+
+Внутренняя документация проекта. Сейчас здесь хранится [дизайн-спецификация](./docs/DESIGN.md).
+
+### `archive/`
+
+Архивные материалы, не участвующие в активной сборке. В `archive/tradelab_app/` перенесен старый scaffold, чтобы он не мешал текущей структуре и не путал навигацию по репозиторию.
+
+## Архитектурные принципы
+
+- Маршруты в `app/` остаются тонкими и композиционными.
+- Доменные элементы собираются в `features/`, а не размазываются по всему проекту.
+- Общие композиционные куски лежат в `components/shared/`.
+- Низкоуровневые UI-примитивы живут отдельно в `components/ui/`.
+- Демо-данные изолированы от представления в `lib/demo-data/`.
+- Повторяющиеся пользовательские подписи и статусы централизованы в `lib/ui-text.ts`.
+
+## Основные экраны
+
+- `/workspace` — обзор проектов, датасетов и последних запусков;
+- `/code` — mock IDE для подготовки и запуска стратегии;
+- `/data` — источники данных, pipeline и версии датасетов;
+- `/backtests` — очередь и список запусков;
+- `/runs/[id]` — детальная карточка конкретного запуска;
+- `/compare` — сравнение нескольких запусков;
+- `/settings` — заглушка под системные настройки;
+- `/research` и `/deploy` — заготовки под будущие разделы.
+
+## Как расширять проект
+
+Если добавляется новая доменная область:
+
+1. Создать новую папку в `features/`.
+2. Держать компонентную логику рядом с доменом.
+3. Оставлять в `app/` только маршрутизацию и композицию экрана.
+4. Выносить мок-данные или адаптеры данных из страницы в `lib/`.
+
+Если добавляется новый общий визуальный блок:
+
+1. Поместить низкоуровневую основу в `components/ui/`, если это примитив.
+2. Поместить составной, но недоменный компонент в `components/shared/`.
+3. Не складывать новую логику обратно в старые плоские папки.
+
+## Текущее состояние
+
+Проект пока не подключен к реальному API и не содержит серверной модели данных. Это UI-прототип, который уже можно развивать в сторону полноценного терминала для исследования и воспроизводимого запуска торговых стратегий.
