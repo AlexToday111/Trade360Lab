@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 
 type DatasetSource = "bybit" | "local";
 type MarketType = "spot" | "futures";
+type LocalCsvMode = "merge" | "separate";
 
 type UiDataset = DatasetVersion & {
   source: DatasetSource;
@@ -60,6 +61,8 @@ const marketTypeLabels: Record<MarketType, string> = {
   spot: "Spot",
   futures: "Futures",
 };
+
+const bybitTimeframes = ["5M", "1H", "1D"] as const;
 
 function formatBytes(bytes: number) {
   if (!bytes) {
@@ -96,10 +99,11 @@ export default function DataPage() {
   const [datasetSource, setDatasetSource] = useState<DatasetSource>("bybit");
   const [marketType, setMarketType] = useState<MarketType>("spot");
   const [symbolsInput, setSymbolsInput] = useState("BTCUSDT");
-  const [timeframe, setTimeframe] = useState("1h");
+  const [timeframe, setTimeframe] = useState<(typeof bybitTimeframes)[number]>("1H");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [uploadedCsvFiles, setUploadedCsvFiles] = useState<File[]>([]);
+  const [localCsvMode, setLocalCsvMode] = useState<LocalCsvMode | null>(null);
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [mergedCsv, setMergedCsv] = useState<MergedCsv | null>(null);
 
@@ -117,10 +121,11 @@ export default function DataPage() {
     setDatasetSource("bybit");
     setMarketType("spot");
     setSymbolsInput("BTCUSDT");
-    setTimeframe("1h");
+    setTimeframe("1H");
     setDateFrom("");
     setDateTo("");
     setUploadedCsvFiles([]);
+    setLocalCsvMode(null);
     setMergeError(null);
     setMergedCsv(null);
   }
@@ -134,6 +139,7 @@ export default function DataPage() {
     }
 
     setUploadedCsvFiles(files);
+    setLocalCsvMode(files.length > 1 ? null : "separate");
     setMergeError(null);
   }
 
@@ -199,6 +205,25 @@ export default function DataPage() {
   }
 
   function handleAddDataset() {
+    if (
+      datasetSource === "local" &&
+      uploadedCsvFiles.length > 1 &&
+      localCsvMode === null
+    ) {
+      setMergeError("Выберите режим обработки: смёрджить CSV или оставить по отдельности.");
+      return;
+    }
+
+    if (
+      datasetSource === "local" &&
+      uploadedCsvFiles.length > 1 &&
+      localCsvMode === "merge" &&
+      !mergedCsv
+    ) {
+      setMergeError("Нажмите «Склеить CSV», чтобы сформировать объединенный файл.");
+      return;
+    }
+
     const symbols = symbolsInput
       .split(/[\s,]+/)
       .map((symbol) => symbol.trim())
@@ -207,31 +232,34 @@ export default function DataPage() {
     const uploadedSize = uploadedCsvFiles.reduce((total, file) => total + file.size, 0);
 
     const datasetId = `custom-${Date.now()}`;
+    const isLocal = datasetSource === "local";
+    const isMergeMode = isLocal && localCsvMode === "merge";
     const newDataset: UiDataset = {
       id: datasetId,
       name: datasetName.trim() || `Новый датасет ${datasets.length + 1}`,
-      period:
-        dateFrom && dateTo
+      period: isLocal
+        ? "Локальный импорт"
+        : dateFrom && dateTo
           ? `${dateFrom} -> ${dateTo}`
-          : datasetSource === "bybit"
-            ? "Импорт из ByBit"
-            : "Локальный импорт",
-      timeframe,
-      symbols: symbols.length > 0 ? symbols : ["N/A"],
-      size: mergedCsv ? formatBytes(mergedCsv.size) : formatBytes(uploadedSize),
-      pipelineHash: mergedCsv ? "csv_merge_local" : "dataset_pending",
+          : "Импорт из ByBit",
+      timeframe: isLocal ? "N/A" : timeframe,
+      symbols: isLocal ? ["CSV"] : symbols.length > 0 ? symbols : ["N/A"],
+      size: isMergeMode && mergedCsv ? formatBytes(mergedCsv.size) : formatBytes(uploadedSize),
+      pipelineHash: isMergeMode ? "csv_merge_local" : "dataset_pending",
       source: datasetSource,
-      marketType,
-      rowsHint: mergedCsv
-        ? `${mergedCsv.rows.toLocaleString("ru-RU")} строк`
+      marketType: isLocal ? "spot" : marketType,
+      rowsHint: isMergeMode && mergedCsv
+        ? `${mergedCsv.rows.toLocaleString("ru-RU")} строк (merged)`
         : datasetSource === "bybit"
           ? "Ожидает парсинг"
-          : uploadedCsvFiles.length > 0
-            ? `${uploadedCsvFiles.length} файл(ов)`
+          : uploadedCsvFiles.length > 1
+            ? `${uploadedCsvFiles.length} файл(ов) по отдельности`
+            : uploadedCsvFiles.length > 0
+              ? "1 CSV файл"
             : "Черновик",
-      mergedCsvName: mergedCsv?.name,
-      mergedCsvRows: mergedCsv?.rows,
-      mergedCsvUrl: mergedCsv?.url,
+      mergedCsvName: isMergeMode ? mergedCsv?.name : undefined,
+      mergedCsvRows: isMergeMode ? mergedCsv?.rows : undefined,
+      mergedCsvUrl: isMergeMode ? mergedCsv?.url : undefined,
     };
 
     setDatasets((prev) => [newDataset, ...prev]);
@@ -240,7 +268,10 @@ export default function DataPage() {
     resetCreateForm({ preserveMergedCsv: Boolean(mergedCsv) });
   }
 
-  const showFuturesMerge = datasetSource === "local" && marketType === "futures";
+  const isBybitForm = datasetSource === "bybit";
+  const shouldAskLocalCsvMode =
+    datasetSource === "local" && uploadedCsvFiles.length > 1;
+  const showMergePanel = datasetSource === "local" && localCsvMode === "merge";
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -259,7 +290,7 @@ export default function DataPage() {
       {createOpen ? (
         <SurfaceCard
           title="Добавление датасета"
-          subtitle="Источник: ByBit или локальные файлы. Для фьючерсов поддержана склейка нескольких CSV в один."
+          subtitle="Источник: ByBit или локальные файлы. Для нескольких CSV можно выбрать режим: смёрджить или по отдельности."
           actions={
             <Button
               variant="secondary"
@@ -270,7 +301,12 @@ export default function DataPage() {
             </Button>
           }
         >
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div
+            className={cn(
+              "grid gap-4",
+              isBybitForm ? "lg:grid-cols-2" : "lg:grid-cols-1"
+            )}
+          >
             <div className="space-y-3">
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">Название датасета</div>
@@ -296,7 +332,10 @@ export default function DataPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            {isBybitForm ? (
+              <div className="space-y-3">
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">Рынок</div>
                 <Select
@@ -312,9 +351,6 @@ export default function DataPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-3">
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">Символы (через запятую)</div>
                 <Input
@@ -326,11 +362,11 @@ export default function DataPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="mb-1 text-xs text-muted-foreground">Таймфрейм</div>
+                  <div className="mb-1 text-xs text-muted-foreground">Период от</div>
                   <Input
-                    value={timeframe}
-                    onChange={(event) => setTimeframe(event.target.value)}
-                    placeholder="1h"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(event) => setDateFrom(event.target.value)}
                   />
                 </div>
                 <div>
@@ -344,14 +380,27 @@ export default function DataPage() {
               </div>
 
               <div>
-                <div className="mb-1 text-xs text-muted-foreground">Период от</div>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(event) => setDateFrom(event.target.value)}
-                />
+                <div className="mb-1 text-xs text-muted-foreground">Таймфрейм</div>
+                <Select
+                  value={timeframe}
+                  onValueChange={(value) =>
+                    setTimeframe(value as (typeof bybitTimeframes)[number])
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bybitTimeframes.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
+              </div>
+            ) : null}
           </div>
 
           {datasetSource === "local" ? (
@@ -368,11 +417,50 @@ export default function DataPage() {
             </div>
           ) : null}
 
-          {showFuturesMerge ? (
+          {shouldAskLocalCsvMode ? (
+            <div className="mt-4 rounded-[18px] border border-border bg-panel-subtle p-4">
+              <div className="text-sm font-medium text-foreground">
+                Загружено несколько CSV файлов
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Выберите режим: смёрджить в один датасет или оставить файлы по отдельности.
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={localCsvMode === "merge" ? "default" : "secondary"}
+                  onClick={() => {
+                    setLocalCsvMode("merge");
+                    setMergeError(null);
+                  }}
+                >
+                  Смёрджить
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={localCsvMode === "separate" ? "default" : "secondary"}
+                  onClick={() => {
+                    setLocalCsvMode("separate");
+                    setMergeError(null);
+                    if (mergedCsv?.url) {
+                      URL.revokeObjectURL(mergedCsv.url);
+                    }
+                    setMergedCsv(null);
+                  }}
+                >
+                  По отдельности
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {showMergePanel ? (
             <div className="mt-4 space-y-3 rounded-[18px] border border-border bg-panel-subtle p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-foreground">Склейка CSV контрактов</div>
+                  <div className="text-sm font-medium text-foreground">Склейка CSV</div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     Загрузите несколько CSV, объедините в один файл и используйте его как датасет.
                   </div>
@@ -382,8 +470,6 @@ export default function DataPage() {
                   Склеить CSV
                 </Button>
               </div>
-
-              {mergeError ? <div className="text-xs text-status-failed">{mergeError}</div> : null}
 
               {mergedCsv ? (
                 <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -401,6 +487,16 @@ export default function DataPage() {
               ) : null}
             </div>
           ) : null}
+
+          {datasetSource === "local" &&
+          uploadedCsvFiles.length > 1 &&
+          localCsvMode === "separate" ? (
+            <div className="mt-4 rounded-[14px] border border-border bg-panel-subtle p-3 text-xs text-muted-foreground">
+              Файлы будут добавлены по отдельности в рамках одного локального датасета (без merge).
+            </div>
+          ) : null}
+
+          {mergeError ? <div className="mt-3 text-xs text-status-failed">{mergeError}</div> : null}
 
           <div className="mt-5 flex justify-end">
             <Button type="button" onClick={handleAddDataset}>
