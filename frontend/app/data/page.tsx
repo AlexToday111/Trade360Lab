@@ -74,6 +74,7 @@ type UiDataset = DatasetVersion & {
   loadStatus: DatasetLoadStatus;
   profile: DatasetProfile;
   versions: DatasetVersionSnapshot[];
+  tags: string[];
   rowsHint?: string;
   mergedCsvUrl?: string;
   mergedCsvName?: string;
@@ -185,6 +186,22 @@ function formatVersionDate(isoDate: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function buildDatasetTags(
+  source: DatasetSource,
+  market: MarketType,
+  timeframe: string,
+  symbols: string[]
+) {
+  return Array.from(
+    new Set([
+      source,
+      market,
+      timeframe.toLowerCase(),
+      ...symbols.map((symbol) => symbol.toLowerCase()),
+    ])
+  );
 }
 
 async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
@@ -337,6 +354,7 @@ function createInitialDatasets(): UiDataset[] {
         dataset.pipelineHash
       ),
     ],
+    tags: buildDatasetTags("local", "spot", dataset.timeframe, dataset.symbols),
     rowsHint: "Демо-набор",
   }));
 }
@@ -346,6 +364,11 @@ export default function DataPage() {
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
   const [compareVersionFrom, setCompareVersionFrom] = useState("");
   const [compareVersionTo, setCompareVersionTo] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterSource, setFilterSource] = useState<"all" | DatasetSource>("all");
+  const [filterMarket, setFilterMarket] = useState<"all" | MarketType>("all");
+  const [filterTimeframe, setFilterTimeframe] = useState("all");
+  const [filterSymbol, setFilterSymbol] = useState("all");
 
   const [createOpen, setCreateOpen] = useState(false);
   const [datasetName, setDatasetName] = useState("");
@@ -379,6 +402,51 @@ export default function DataPage() {
     [compareVersionTo, selectedDataset]
   );
 
+  const availableTimeframes = useMemo(
+    () =>
+      Array.from(new Set(datasets.map((dataset) => dataset.timeframe))).sort(),
+    [datasets]
+  );
+
+  const availableSymbols = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          datasets.flatMap((dataset) =>
+            dataset.symbols.map((symbol) => symbol.toUpperCase())
+          )
+        )
+      ).sort(),
+    [datasets]
+  );
+
+  const filteredDatasets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    return datasets.filter((dataset) => {
+      const sourceMatch = filterSource === "all" || dataset.source === filterSource;
+      const marketMatch = filterMarket === "all" || dataset.marketType === filterMarket;
+      const timeframeMatch =
+        filterTimeframe === "all" || dataset.timeframe === filterTimeframe;
+      const symbolMatch =
+        filterSymbol === "all" ||
+        dataset.symbols.some((symbol) => symbol.toUpperCase() === filterSymbol);
+      const searchMatch =
+        q.length === 0 ||
+        dataset.name.toLowerCase().includes(q) ||
+        dataset.tags.some((tag) => tag.includes(q));
+
+      return (
+        sourceMatch &&
+        marketMatch &&
+        timeframeMatch &&
+        symbolMatch &&
+        searchMatch &&
+        dataset.loadStatus !== "error"
+      );
+    });
+  }, [datasets, filterMarket, filterSource, filterSymbol, filterTimeframe, searchQuery]);
+
   useEffect(() => {
     if (!selectedDataset) {
       setCompareVersionFrom("");
@@ -391,6 +459,22 @@ export default function DataPage() {
     setCompareVersionFrom(previous.id);
     setCompareVersionTo(latest.id);
   }, [selectedDataset?.id, selectedDataset?.versions.length]);
+
+  useEffect(() => {
+    if (filteredDatasets.length === 0) {
+      setSelectedDatasetId(null);
+      return;
+    }
+
+    if (
+      selectedDatasetId &&
+      filteredDatasets.some((dataset) => dataset.id === selectedDatasetId)
+    ) {
+      return;
+    }
+
+    setSelectedDatasetId(filteredDatasets[0].id);
+  }, [filteredDatasets, selectedDatasetId]);
 
   useEffect(() => {
     const queuedIds = datasets
@@ -604,6 +688,12 @@ export default function DataPage() {
           isMergeMode ? "csv_merge_local" : "dataset_pending"
         ),
       ],
+      tags: buildDatasetTags(
+        datasetSource,
+        isLocal ? "spot" : marketType,
+        isLocal ? "N/A" : timeframe,
+        isLocal ? ["CSV"] : symbols.length > 0 ? symbols : ["N/A"]
+      ),
       rowsHint: isMergeMode && mergedCsv
         ? `${mergedCsv.rows.toLocaleString("ru-RU")} строк (merged)`
         : datasetSource === "bybit"
@@ -937,6 +1027,86 @@ export default function DataPage() {
         ))}
       </div>
 
+      <SurfaceCard
+        title="Теги и поиск"
+        subtitle="Фильтруйте датасеты по источнику, рынку, таймфрейму и символу."
+        className="bg-[linear-gradient(135deg,rgba(31,46,87,0.28),rgba(20,24,35,1)_70%)]"
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="xl:col-span-2">
+            <div className="mb-1 text-xs text-muted-foreground">Поиск</div>
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Название, тег, символ"
+            />
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-muted-foreground">Источник</div>
+            <Select
+              value={filterSource}
+              onValueChange={(value) => setFilterSource(value as "all" | DatasetSource)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="bybit">ByBit</SelectItem>
+                <SelectItem value="local">Локально</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-muted-foreground">Рынок</div>
+            <Select
+              value={filterMarket}
+              onValueChange={(value) => setFilterMarket(value as "all" | MarketType)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все</SelectItem>
+                <SelectItem value="spot">Spot</SelectItem>
+                <SelectItem value="futures">Futures</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-muted-foreground">ТФ / Символ</div>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={filterTimeframe} onValueChange={setFilterTimeframe}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">ТФ: все</SelectItem>
+                  {availableTimeframes.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterSymbol} onValueChange={setFilterSymbol}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Символ: все</SelectItem>
+                  {availableSymbols.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </SurfaceCard>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
         <SurfaceCard
           title="Список датасетов"
@@ -944,7 +1114,7 @@ export default function DataPage() {
           contentClassName="p-0"
         >
           <div className="divide-y divide-border/80">
-            {datasets.map((dataset) => {
+            {filteredDatasets.map((dataset) => {
               const isSelected = dataset.id === selectedDatasetId;
 
               return (
@@ -976,6 +1146,11 @@ export default function DataPage() {
                 </button>
               );
             })}
+            {filteredDatasets.length === 0 ? (
+              <div className="p-4 text-xs text-muted-foreground">
+                По текущим фильтрам датасеты не найдены.
+              </div>
+            ) : null}
           </div>
         </SurfaceCard>
 
