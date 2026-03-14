@@ -150,7 +150,7 @@ export default function WorkspacePage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="grid gap-4">
         <SurfaceCard title="Последние запуски" subtitle="Что происходило последним">
           <div className="flex flex-col gap-3">
             {recentRuns.length === 0 ? (
@@ -179,32 +179,6 @@ export default function WorkspacePage() {
           </div>
         </SurfaceCard>
 
-        <SurfaceCard
-          title="Быстрый доступ к датасетам"
-          subtitle="Версии, которые чаще всего используются в сценариях"
-        >
-          <div className="grid gap-3 md:grid-cols-3">
-            {datasetVersions.map((dataset) => (
-              <div
-                key={dataset.id}
-                className="rounded-[18px] border border-border bg-panel-subtle p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-medium text-foreground">{dataset.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {dataset.period}
-                    </div>
-                  </div>
-                  <Badge variant="secondary">{dataset.timeframe}</Badge>
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground">
-                  {dataset.symbols.join(" • ")}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SurfaceCard>
       </div>
     </div>
   );
