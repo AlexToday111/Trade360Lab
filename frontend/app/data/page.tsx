@@ -51,6 +51,20 @@ type CsvValidation = {
   symbolCoverage: string;
 };
 
+type CsvImportIssue = {
+  fileName: string;
+  rowNumber: number;
+  timestamp: string;
+  column: string;
+  issue: "missing_column" | "missing_value" | "duplicate_timestamp" | "unsorted_timestamp";
+  value: string;
+};
+
+type CsvValidationResult = {
+  validation: CsvValidation | null;
+  issues: CsvImportIssue[];
+};
+
 type DatasetProfile = {
   rowCount: string;
   dateRange: string;
@@ -131,6 +145,13 @@ const loadStatusMeta: Record<
   },
 };
 
+const importIssueLabels: Record<CsvImportIssue["issue"], string> = {
+  missing_column: "Отсутствует колонка",
+  missing_value: "Пустое значение",
+  duplicate_timestamp: "Дубликат timestamp",
+  unsorted_timestamp: "Нарушена сортировка",
+};
+
 function formatBytes(bytes: number) {
   if (!bytes) {
     return "0 B";
@@ -146,6 +167,11 @@ function formatBytes(bytes: number) {
   }
 
   return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function escapeCsvCell(value: string) {
+  const normalized = value.replace(/"/g, "\"\"");
+  return `"${normalized}"`;
 }
 
 function parseCsvRow(line: string) {
@@ -235,13 +261,14 @@ function buildBacktestCompatibility(params: {
   };
 }
 
-async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
+async function validateCsvFiles(files: File[]): Promise<CsvValidationResult> {
   if (files.length === 0) {
-    return null;
+    return { validation: null, issues: [] };
   }
 
   let headerColumns: string[] = [];
   const timestampSeen = new Set<string>();
+  const issues: CsvImportIssue[] = [];
 
   let duplicateTimestampCount = 0;
   let missingValueCount = 0;
@@ -270,6 +297,20 @@ async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
       headerColumns = normalizedHeader;
     }
 
+    const missingColumnsInFile = requiredCsvColumns.filter(
+      (requiredColumn) => !normalizedHeader.includes(requiredColumn)
+    );
+    missingColumnsInFile.forEach((column) => {
+      issues.push({
+        fileName: file.name,
+        rowNumber: 1,
+        timestamp: "-",
+        column,
+        issue: "missing_column",
+        value: "",
+      });
+    });
+
     const timestampIndex = normalizedHeader.indexOf("timestamp");
     const symbolIndex = normalizedHeader.indexOf("symbol");
 
@@ -288,6 +329,14 @@ async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
         const value = cells[columnIndex];
         if (value === undefined || value === "") {
           missingValueCount += 1;
+          issues.push({
+            fileName: file.name,
+            rowNumber: rowIndex + 1,
+            timestamp: timestampIndex !== -1 ? cells[timestampIndex] ?? "-" : "-",
+            column: requiredColumn,
+            issue: "missing_value",
+            value: "",
+          });
         }
       }
 
@@ -296,6 +345,14 @@ async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
         if (timestampValue) {
           if (timestampSeen.has(timestampValue)) {
             duplicateTimestampCount += 1;
+            issues.push({
+              fileName: file.name,
+              rowNumber: rowIndex + 1,
+              timestamp: timestampValue,
+              column: "timestamp",
+              issue: "duplicate_timestamp",
+              value: timestampValue,
+            });
           } else {
             timestampSeen.add(timestampValue);
           }
@@ -310,6 +367,14 @@ async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
             }
             if (previousTimestamp !== null && asEpoch < previousTimestamp) {
               unsortedCount += 1;
+              issues.push({
+                fileName: file.name,
+                rowNumber: rowIndex + 1,
+                timestamp: timestampValue,
+                column: "timestamp",
+                issue: "unsorted_timestamp",
+                value: timestampValue,
+              });
             }
             if (previousTimestamp !== null && asEpoch > previousTimestamp) {
               stepSamples.push((asEpoch - previousTimestamp) / 60000);
@@ -338,24 +403,31 @@ async function validateCsvFiles(files: File[]): Promise<CsvValidation | null> {
       : null;
 
   return {
-    isValid:
-      missingColumns.length === 0 &&
-      duplicateTimestampCount === 0 &&
-      missingValueCount === 0 &&
-      unsortedCount === 0,
-    detectedColumns: headerColumns,
-    missingColumns,
-    duplicateTimestampCount,
-    missingValueCount,
-    unsortedCount,
-    totalRows,
-    dateRangeStart: minTimestampValue ? new Date(minTimestampValue).toISOString().slice(0, 10) : null,
-    dateRangeEnd: maxTimestampValue ? new Date(maxTimestampValue).toISOString().slice(0, 10) : null,
-    inferredStep: formatTimeStep(averageStep ? Math.round(averageStep) : null),
-    symbolCoverage:
-      distinctSymbols.size > 0
-        ? `${distinctSymbols.size} символов`
-        : "N/A",
+    validation: {
+      isValid:
+        missingColumns.length === 0 &&
+        duplicateTimestampCount === 0 &&
+        missingValueCount === 0 &&
+        unsortedCount === 0,
+      detectedColumns: headerColumns,
+      missingColumns,
+      duplicateTimestampCount,
+      missingValueCount,
+      unsortedCount,
+      totalRows,
+      dateRangeStart: minTimestampValue
+        ? new Date(minTimestampValue).toISOString().slice(0, 10)
+        : null,
+      dateRangeEnd: maxTimestampValue
+        ? new Date(maxTimestampValue).toISOString().slice(0, 10)
+        : null,
+      inferredStep: formatTimeStep(averageStep ? Math.round(averageStep) : null),
+      symbolCoverage:
+        distinctSymbols.size > 0
+          ? `${distinctSymbols.size} символов`
+          : "N/A",
+    },
+    issues,
   };
 }
 
@@ -419,6 +491,7 @@ export default function DataPage() {
   const [dateTo, setDateTo] = useState("");
   const [uploadedCsvFiles, setUploadedCsvFiles] = useState<File[]>([]);
   const [csvValidation, setCsvValidation] = useState<CsvValidation | null>(null);
+  const [csvImportIssues, setCsvImportIssues] = useState<CsvImportIssue[]>([]);
   const [localCsvMode, setLocalCsvMode] = useState<LocalCsvMode | null>(null);
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [mergedCsv, setMergedCsv] = useState<MergedCsv | null>(null);
@@ -570,6 +643,7 @@ export default function DataPage() {
     setDateTo("");
     setUploadedCsvFiles([]);
     setCsvValidation(null);
+    setCsvImportIssues([]);
     setLocalCsvMode(null);
     setMergeError(null);
     setMergedCsv(null);
@@ -587,8 +661,9 @@ export default function DataPage() {
     setLocalCsvMode(files.length > 1 ? null : "separate");
     setMergeError(null);
 
-    const validation = await validateCsvFiles(files);
-    setCsvValidation(validation);
+    const validationResult = await validateCsvFiles(files);
+    setCsvValidation(validationResult.validation);
+    setCsvImportIssues(validationResult.issues);
   }
 
   async function handleMergeCsv() {
@@ -650,6 +725,34 @@ export default function DataPage() {
     } catch {
       setMergeError("Ошибка чтения CSV файлов. Проверьте формат и попробуйте снова.");
     }
+  }
+
+  function handleExportImportIssues() {
+    if (csvImportIssues.length === 0) {
+      return;
+    }
+
+    const header = ["file", "row", "timestamp", "column", "issue", "value"];
+    const rows = csvImportIssues.map((issue) => [
+      issue.fileName,
+      String(issue.rowNumber),
+      issue.timestamp,
+      issue.column,
+      importIssueLabels[issue.issue],
+      issue.value,
+    ]);
+
+    const payload = [header, ...rows]
+      .map((row) => row.map((cell) => escapeCsvCell(cell)).join(","))
+      .join("\n");
+
+    const blob = new Blob([payload], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `import-issues-${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   function handleAddDataset() {
@@ -1012,6 +1115,53 @@ export default function DataPage() {
                 <div>Пропуски значений: {csvValidation.missingValueCount}</div>
                 <div>Нарушения сортировки: {csvValidation.unsortedCount}</div>
               </div>
+            </div>
+          ) : null}
+
+          {datasetSource === "local" && csvImportIssues.length > 0 ? (
+            <div className="mt-4 rounded-[18px] border border-status-error/40 bg-[linear-gradient(145deg,rgba(120,34,34,0.16),rgba(28,18,18,0.55)_72%)] p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-foreground">Превью ошибок импорта</div>
+                  <div className="text-xs text-muted-foreground">
+                    Проблемных строк: {csvImportIssues.length}
+                  </div>
+                </div>
+                <Button type="button" size="sm" variant="secondary" onClick={handleExportImportIssues}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Экспорт отчета
+                </Button>
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Файл</TableHead>
+                    <TableHead>Строка</TableHead>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Поле</TableHead>
+                    <TableHead>Ошибка</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {csvImportIssues.slice(0, 25).map((issue, index) => (
+                    <TableRow key={`${issue.fileName}-${issue.rowNumber}-${issue.issue}-${index}`}>
+                      <TableCell className="text-xs text-muted-foreground">{issue.fileName}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{issue.rowNumber}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{issue.timestamp}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{issue.column}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {importIssueLabels[issue.issue]}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {csvImportIssues.length > 25 ? (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Показаны первые 25 строк. Полный список выгрузите кнопкой выше.
+                </div>
+              ) : null}
             </div>
           ) : null}
 
