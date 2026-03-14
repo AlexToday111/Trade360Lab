@@ -20,10 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PageHeader } from "@/components/shared/page-header";
 import { SurfaceCard } from "@/components/shared/surface-card";
 import {
-  dataQuality,
   dataSources,
   datasetVersions,
   previewRows,
@@ -556,14 +554,13 @@ export default function DataPage() {
       return;
     }
 
-    if (
-      selectedDatasetId &&
-      filteredDatasets.some((dataset) => dataset.id === selectedDatasetId)
-    ) {
+    if (!selectedDatasetId) {
       return;
     }
 
-    setSelectedDatasetId(filteredDatasets[0].id);
+    if (!filteredDatasets.some((dataset) => dataset.id === selectedDatasetId)) {
+      setSelectedDatasetId(null);
+    }
   }, [filteredDatasets, selectedDatasetId]);
 
   useEffect(() => {
@@ -955,18 +952,6 @@ export default function DataPage() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      <PageHeader
-        eyebrow="Данные"
-        title="Данные"
-        description="Выберите датасет из списка, затем работайте с его таблицами."
-        actions={
-          <Button size="sm" onClick={() => setCreateOpen((value) => !value)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {createOpen ? "Свернуть форму" : "Добавить датасет"}
-          </Button>
-        }
-      />
-
       {createOpen ? (
         <SurfaceCard
           title="Добавление датасета"
@@ -1696,17 +1681,6 @@ export default function DataPage() {
           )}
         </SurfaceCard>
       </div>
-
-      <SurfaceCard title="Качество данных">
-        <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground md:grid-cols-4">
-          {dataQuality.map((item) => (
-            <div key={item.label} className="rounded-[18px] border border-border bg-panel-subtle p-3">
-              <div className="text-[11px] uppercase">{item.label}</div>
-              <div className="text-foreground">{item.value}</div>
-            </div>
-          ))}
-        </div>
-      </SurfaceCard>
     </div>
   );
 }
