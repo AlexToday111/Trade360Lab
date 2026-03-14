@@ -132,13 +132,14 @@ export default function RunDetailsPage() {
           actions={
             <Button
               type="button"
-              size="sm"
+              size="icon"
               variant="secondary"
               onClick={() => setIsAnalyzerFullscreen(true)}
-              className="h-8 border border-border/80 bg-panel-subtle text-xs text-foreground transition hover:border-white hover:bg-white hover:text-black hover:shadow-[0_0_14px_rgba(255,255,255,0.6)]"
+              aria-label="Развернуть график цены на весь экран"
+              title="Развернуть график цены на весь экран"
+              className="h-8 w-8 border border-border/80 bg-panel-subtle text-foreground transition hover:border-white hover:bg-white hover:text-black hover:shadow-[0_0_14px_rgba(255,255,255,0.6)]"
             >
-              <Expand className="mr-2 h-4 w-4" />
-              Развернуть на весь экран график цены
+              <Expand className="h-4 w-4" />
             </Button>
           }
           chartClassName="h-64 xl:h-72 2xl:h-[420px]"
