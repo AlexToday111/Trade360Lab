@@ -72,6 +72,7 @@ type UiDataset = DatasetVersion & {
   source: DatasetSource;
   marketType: MarketType;
   loadStatus: DatasetLoadStatus;
+  archived: boolean;
   profile: DatasetProfile;
   versions: DatasetVersionSnapshot[];
   tags: string[];
@@ -335,6 +336,7 @@ function createInitialDatasets(): UiDataset[] {
     source: "local",
     marketType: "spot",
     loadStatus: "ready",
+    archived: false,
     profile: {
       rowCount: `${previewRows.length} строк`,
       dateRange: demoRange,
@@ -369,6 +371,8 @@ export default function DataPage() {
   const [filterMarket, setFilterMarket] = useState<"all" | MarketType>("all");
   const [filterTimeframe, setFilterTimeframe] = useState("all");
   const [filterSymbol, setFilterSymbol] = useState("all");
+  const [showArchived, setShowArchived] = useState(false);
+  const [renameDraft, setRenameDraft] = useState("");
 
   const [createOpen, setCreateOpen] = useState(false);
   const [datasetName, setDatasetName] = useState("");
@@ -388,6 +392,10 @@ export default function DataPage() {
     () => datasets.find((dataset) => dataset.id === selectedDatasetId) ?? null,
     [datasets, selectedDatasetId]
   );
+
+  useEffect(() => {
+    setRenameDraft(selectedDataset?.name ?? "");
+  }, [selectedDataset?.id, selectedDataset?.name]);
 
   const selectedVersionFrom = useMemo(
     () =>
@@ -424,6 +432,7 @@ export default function DataPage() {
     const q = searchQuery.trim().toLowerCase();
 
     return datasets.filter((dataset) => {
+      const archivedMatch = showArchived ? true : !dataset.archived;
       const sourceMatch = filterSource === "all" || dataset.source === filterSource;
       const marketMatch = filterMarket === "all" || dataset.marketType === filterMarket;
       const timeframeMatch =
@@ -437,6 +446,7 @@ export default function DataPage() {
         dataset.tags.some((tag) => tag.includes(q));
 
       return (
+        archivedMatch &&
         sourceMatch &&
         marketMatch &&
         timeframeMatch &&
@@ -445,7 +455,7 @@ export default function DataPage() {
         dataset.loadStatus !== "error"
       );
     });
-  }, [datasets, filterMarket, filterSource, filterSymbol, filterTimeframe, searchQuery]);
+  }, [datasets, filterMarket, filterSource, filterSymbol, filterTimeframe, searchQuery, showArchived]);
 
   useEffect(() => {
     if (!selectedDataset) {
@@ -679,6 +689,7 @@ export default function DataPage() {
       source: datasetSource,
       marketType: isLocal ? "spot" : marketType,
       loadStatus: datasetSource === "bybit" ? "queued" : "ready",
+      archived: false,
       profile,
       versions: [
         createSnapshot(
@@ -733,6 +744,61 @@ export default function DataPage() {
         return { ...dataset, versions: [...dataset.versions, snapshot] };
       })
     );
+  }
+
+  function handleRenameDataset() {
+    if (!selectedDataset) {
+      return;
+    }
+    const nextName = renameDraft.trim();
+    if (!nextName) {
+      return;
+    }
+    setDatasets((prev) =>
+      prev.map((dataset) =>
+        dataset.id === selectedDataset.id ? { ...dataset, name: nextName } : dataset
+      )
+    );
+  }
+
+  function handleDuplicateDataset() {
+    if (!selectedDataset) {
+      return;
+    }
+    const copyId = `copy-${Date.now()}`;
+    const copiedVersions = selectedDataset.versions.map((version, index) => ({
+      ...version,
+      id: `${copyId}-v${index + 1}`,
+    }));
+    const duplicatedDataset: UiDataset = {
+      ...selectedDataset,
+      id: copyId,
+      name: `${selectedDataset.name} (копия)`,
+      archived: false,
+      versions: copiedVersions,
+      loadStatus: "ready",
+    };
+    setDatasets((prev) => [duplicatedDataset, ...prev]);
+    setSelectedDatasetId(copyId);
+  }
+
+  function handleArchiveDataset() {
+    if (!selectedDataset) {
+      return;
+    }
+    setDatasets((prev) =>
+      prev.map((dataset) =>
+        dataset.id === selectedDataset.id ? { ...dataset, archived: true } : dataset
+      )
+    );
+  }
+
+  function handleDeleteDataset() {
+    if (!selectedDataset) {
+      return;
+    }
+    setDatasets((prev) => prev.filter((dataset) => dataset.id !== selectedDataset.id));
+    setSelectedDatasetId(null);
   }
 
   const isBybitForm = datasetSource === "bybit";
@@ -1031,6 +1097,15 @@ export default function DataPage() {
         title="Теги и поиск"
         subtitle="Фильтруйте датасеты по источнику, рынку, таймфрейму и символу."
         className="bg-[linear-gradient(135deg,rgba(31,46,87,0.28),rgba(20,24,35,1)_70%)]"
+        actions={
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setShowArchived((value) => !value)}
+          >
+            {showArchived ? "Скрыть архив" : "Показать архив"}
+          </Button>
+        }
       >
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <div className="xl:col-span-2">
@@ -1139,6 +1214,7 @@ export default function DataPage() {
                       <Badge className={loadStatusMeta[dataset.loadStatus].className}>
                         {loadStatusMeta[dataset.loadStatus].label}
                       </Badge>
+                      {dataset.archived ? <Badge variant="secondary">Архив</Badge> : null}
                       <Badge variant="secondary">{sourceLabels[dataset.source]}</Badge>
                       <Badge variant="secondary">{marketTypeLabels[dataset.marketType]}</Badge>
                     </div>
@@ -1164,6 +1240,31 @@ export default function DataPage() {
         >
           {selectedDataset ? (
             <div className="space-y-4">
+              <div className="rounded-[18px] border border-border bg-panel-subtle p-4">
+                <div className="mb-3 text-sm font-semibold text-foreground">Действия с датасетом</div>
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+                  <Input
+                    value={renameDraft}
+                    onChange={(event) => setRenameDraft(event.target.value)}
+                    placeholder="Новое имя датасета"
+                  />
+                  <Button type="button" size="sm" variant="secondary" onClick={handleRenameDataset}>
+                    Переименовать
+                  </Button>
+                  <Button type="button" size="sm" variant="secondary" onClick={handleDuplicateDataset}>
+                    Дублировать
+                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="secondary" onClick={handleArchiveDataset}>
+                      Архивировать
+                    </Button>
+                    <Button type="button" size="sm" variant="destructive" onClick={handleDeleteDataset}>
+                      Удалить
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
