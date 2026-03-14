@@ -23,10 +23,10 @@ export function Topbar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex h-10 items-center justify-center gap-2 rounded-lg px-2 text-sm transition",
+                "flex h-10 items-center justify-center gap-2 rounded-lg border border-transparent px-2 text-sm transition-all duration-200",
                 isActive
-                  ? "bg-secondary/70 text-foreground"
-                  : "text-muted-foreground hover:bg-panel hover:text-foreground"
+                  ? "border-white/35 bg-secondary/70 text-foreground shadow-[0_0_10px_rgba(255,255,255,0.22)]"
+                  : "text-muted-foreground hover:border-white/80 hover:bg-panel hover:text-foreground hover:shadow-[0_0_14px_rgba(255,255,255,0.6)]"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
