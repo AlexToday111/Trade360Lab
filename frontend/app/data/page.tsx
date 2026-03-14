@@ -291,6 +291,8 @@ export default function DataPage() {
         <SurfaceCard
           title="Добавление датасета"
           subtitle="Источник: ByBit или локальные файлы. Для нескольких CSV можно выбрать режим: смёрджить или по отдельности."
+          overflow="visible"
+          contentClassName="p-5 pb-6"
           actions={
             <Button
               variant="secondary"
