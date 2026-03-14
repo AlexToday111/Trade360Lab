@@ -16,7 +16,7 @@ export function ChartCard({
 }) {
   return (
     <SurfaceCard title={title} subtitle={subtitle} contentClassName="p-5">
-      <div className="h-52">
+      <div className="h-72">
         <ClientOnly fallback={<LoadingState label="Отрисовка графика..." />}>
           {children}
         </ClientOnly>

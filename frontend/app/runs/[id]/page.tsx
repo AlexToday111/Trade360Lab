@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { ChartCard } from "@/components/shared/chart-card";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -11,6 +12,7 @@ import {
   DrawdownChart,
   UnderwaterChart,
   ReturnsHistogramChart,
+  TradesAnalyzerChart,
 } from "@/features/runs/charts/run-charts";
 import { MetricCard } from "@/features/runs/components/metric-card";
 import { RunHeader } from "@/features/runs/components/run-header";
@@ -19,6 +21,7 @@ import { useRuns } from "@/features/runs/store/run-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { previewRows } from "@/lib/demo-data/datasets";
 import { logLines } from "@/lib/demo-data/logs";
 import { trades } from "@/lib/demo-data/trades";
 
@@ -53,6 +56,24 @@ export default function RunDetailsPage() {
     2
   );
 
+  const tradeSummary = useMemo(() => {
+    const wins = trades.filter((trade) => trade.pnl > 0).length;
+    const losses = trades.filter((trade) => trade.pnl <= 0).length;
+    const avgDuration =
+      trades.length > 0
+        ? trades.reduce((sum, trade) => sum + Number(trade.duration.replace("d", "")), 0) /
+          trades.length
+        : 0;
+    const totalPnl = trades.reduce((sum, trade) => sum + trade.pnl, 0);
+
+    return {
+      wins,
+      losses,
+      totalPnl,
+      avgDuration,
+    };
+  }, []);
+
   return (
     <div className="flex h-full flex-col gap-5">
       <PageHeader
@@ -86,11 +107,37 @@ export default function RunDetailsPage() {
         </ChartCard>
       </div>
 
-      <SurfaceCard
-        title="Сделки"
-        subtitle="Отфильтровано по выбранному запуску."
-        contentClassName="p-0"
+      <ChartCard
+        title="Анализатор сделок"
+        subtitle="График цены по данным датасета с отметками входов и выходов каждой сделки."
       >
+        <TradesAnalyzerChart datasetRows={previewRows} trades={trades} />
+      </ChartCard>
+
+      <SurfaceCard
+        title="Журнал сделок"
+        subtitle="Подробный журнал по сделкам запуска: вход/выход, направление, длительность и PnL."
+      >
+        <div className="grid grid-cols-2 gap-3 p-4 text-xs md:grid-cols-4">
+          <div className="rounded-[14px] border border-border bg-panel-subtle p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">Профитных</div>
+            <div className="text-sm font-medium text-status-success">{tradeSummary.wins}</div>
+          </div>
+          <div className="rounded-[14px] border border-border bg-panel-subtle p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">Убыточных</div>
+            <div className="text-sm font-medium text-status-failed">{tradeSummary.losses}</div>
+          </div>
+          <div className="rounded-[14px] border border-border bg-panel-subtle p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">Суммарный PnL</div>
+            <div className={tradeSummary.totalPnl >= 0 ? "text-sm font-medium text-profit" : "text-sm font-medium text-loss"}>
+              {tradeSummary.totalPnl.toFixed(2)}%
+            </div>
+          </div>
+          <div className="rounded-[14px] border border-border bg-panel-subtle p-3">
+            <div className="text-[11px] uppercase text-muted-foreground">Средняя длительность</div>
+            <div className="text-sm font-medium text-foreground">{tradeSummary.avgDuration.toFixed(1)}d</div>
+          </div>
+        </div>
         <TradesTable rows={trades} />
       </SurfaceCard>
 
