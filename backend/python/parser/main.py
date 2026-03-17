@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from parser.db import get_connection
 from parser.repositories.candle_repository import CandleRepository
@@ -34,6 +35,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    logger = logging.getLogger(__name__)
+
     parser = build_parser()
     args = parser.parse_args()
 
@@ -51,10 +58,12 @@ def main() -> None:
             limit_total=args.limit,
         )
 
-        print(
-            f"Imported candles successfully: "
-            f"exchange={args.exchange}, symbol={args.symbol}, "
-            f"interval={args.interval}, count={inserted_count}"
+        logger.info(
+            "Imported candles successfully: exchange=%s, symbol=%s, interval=%s, count=%s",
+            args.exchange,
+            args.symbol,
+            args.interval,
+            inserted_count,
         )
     finally:
         connection.close()
