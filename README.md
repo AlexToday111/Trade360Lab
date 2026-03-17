@@ -7,16 +7,6 @@ This repository is now split into two top-level apps:
 - `frontend/` - Next.js UI
 - `backend/` - backend service scaffold
 
-## Logo
-
-Place your logo image at:
-
-`frontend/public/logo.png`
-
-If you use another file name, update this line in this README:
-
-`![TradeLab Logo](./frontend/public/logo.png)`
-
 ## Quick start
 
 1. Install frontend dependencies:
