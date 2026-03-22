@@ -24,11 +24,14 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def on_startup() -> None:
         logger.info("Starting python-parser service on port %s", settings.python_service_port)
-        connection = get_connection()
         try:
-            initialize_schema(connection)
-        finally:
-            connection.close()
+            connection = get_connection()
+            try:
+                initialize_schema(connection)
+            finally:
+                connection.close()
+        except AppError:
+            logger.warning("Database schema initialization skipped during startup", exc_info=True)
 
     @app.exception_handler(AppError)
     async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:

@@ -1,7 +1,6 @@
 from typing import Sequence
 
-import psycopg2
-from psycopg2.extras import execute_values
+import psycopg
 
 from parser.exceptions import RepositoryError
 from parser.models.candle import Candle
@@ -44,7 +43,9 @@ class CandleRepository:
             close,
             volume
         )
-        VALUES %s
+        VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
         ON CONFLICT (exchange, symbol, interval, open_time)
         DO UPDATE SET
             close_time = EXCLUDED.close_time,
@@ -58,9 +59,9 @@ class CandleRepository:
 
         try:
             with self.connection.cursor() as cursor:
-                execute_values(cursor, query, rows)
+                cursor.executemany(query, rows)
             self.connection.commit()
             return len(rows)
-        except psycopg2.Error as exc:
+        except psycopg.Error as exc:
             self.connection.rollback()
             raise RepositoryError("Failed to persist candles") from exc

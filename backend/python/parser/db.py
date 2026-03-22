@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import psycopg2
+import psycopg
 
 from parser.config import settings
 from parser.exceptions import RepositoryError
@@ -11,8 +11,8 @@ SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 def get_connection():
     try:
-        return psycopg2.connect(settings.database_dsn)
-    except psycopg2.Error as exc:
+        return psycopg.connect(settings.database_dsn)
+    except psycopg.Error as exc:
         raise RepositoryError("Failed to connect to PostgreSQL") from exc
 
 
@@ -25,6 +25,6 @@ def initialize_schema(connection) -> None:
     except OSError as exc:
         connection.rollback()
         raise RepositoryError("Failed to read database schema") from exc
-    except psycopg2.Error as exc:
+    except psycopg.Error as exc:
         connection.rollback()
         raise RepositoryError("Failed to initialize database schema") from exc
