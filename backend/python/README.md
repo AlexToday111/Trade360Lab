@@ -48,6 +48,23 @@ python -m parser.main
 
 On startup the service connects to PostgreSQL and applies `parser/schema.sql`.
 
+## Optional local PostgreSQL
+
+If your system PostgreSQL credentials are unknown or you want an isolated local database for this service, run:
+
+```powershell
+cd backend/python
+powershell -ExecutionPolicy Bypass -File .\run_local_postgres.ps1
+```
+
+This starts a user-owned PostgreSQL cluster on `localhost:55432` with:
+
+- database: `tradelab`
+- user: `postgres`
+- password: `postgres`
+
+Then set `DB_PORT=55432` in your local `.env`.
+
 ## Health check
 
 ```bash
