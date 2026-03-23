@@ -6,12 +6,14 @@
 
 <h2 align="center">Стек</h2>
 
-- Next.js 16
-- React 18
-- TypeScript
-- Tailwind CSS
-- Radix UI
-- Recharts
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white" />
+  <img alt="React" src="https://img.shields.io/badge/React-18-20232A?logo=react&logoColor=61DAFB" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white" />
+  <img alt="Radix UI" src="https://img.shields.io/badge/Radix_UI-161618?logo=radixui&logoColor=white" />
+  <img alt="Recharts" src="https://img.shields.io/badge/Recharts-22C55E?logo=chartdotjs&logoColor=white" />
+</p>
 
 <h2 align="center">Структура</h2>
 

@@ -6,10 +6,14 @@
 
 <h2 align="center">Стек</h2>
 
-- Python 3.11+
-- FastAPI + Uvicorn
-- Psycopg (PostgreSQL)
-- Requests
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" />
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" />
+  <img alt="Uvicorn" src="https://img.shields.io/badge/Uvicorn-111827?logo=gunicorn&logoColor=white" />
+  <img alt="Psycopg" src="https://img.shields.io/badge/Psycopg-2E5EAA?logo=postgresql&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Requests" src="https://img.shields.io/badge/Requests-2.x-5A29E4?logo=python&logoColor=white" />
+</p>
 
 <h2 align="center">Структура</h2>
 

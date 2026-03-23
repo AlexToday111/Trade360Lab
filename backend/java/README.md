@@ -6,12 +6,14 @@
 
 <h2 align="center">Стек</h2>
 
-- Java 17
-- Spring Boot 3
-- Spring Web
-- Spring Data JPA
-- PostgreSQL JDBC Driver
-- Maven
+<p align="center">
+  <img alt="Java" src="https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white" />
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring_Boot-3-6DB33F?logo=springboot&logoColor=white" />
+  <img alt="Spring Web" src="https://img.shields.io/badge/Spring_Web-6DB33F?logo=spring&logoColor=white" />
+  <img alt="Spring Data JPA" src="https://img.shields.io/badge/Spring_Data_JPA-6DB33F?logo=spring&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Maven" src="https://img.shields.io/badge/Maven-C71A36?logo=apachemaven&logoColor=white" />
+</p>
 
 <h2 align="center">Структура</h2>
 

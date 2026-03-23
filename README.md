@@ -11,18 +11,55 @@
 <h2 align="center">Архитектура</h2>
 
 ```mermaid
-flowchart LR
-    UI[Frontend: Next.js]
-    APIProxy[Next API Routes]
-    JavaAPI[Backend: Java Spring Boot]
-    PyParser[Backend: Python FastAPI Parser]
-    DB[(PostgreSQL)]
+flowchart TB
+    A[Trade360Lab]
 
-    UI --> APIProxy
-    APIProxy --> JavaAPI
-    JavaAPI --> PyParser
-    JavaAPI --> DB
-    PyParser --> DB
+    A --> F[Frontend]
+    A --> B[Backend]
+
+    %% Frontend
+    subgraph Frontend
+        direction TB
+        F --> F1[Pages]
+        F --> F2[Reusable Components]
+        F --> F3[Charts & Visualization]
+        F --> F4[API Integration]
+        F --> F5[Strategy Upload]
+    end
+
+    %% Backend
+    subgraph Backend
+        direction TB
+        B --> J[Java API]
+        B --> D[(PostgreSQL)]
+        B --> P[Python Engine]
+    end
+
+    %% Java Layer
+    subgraph "Java API Layer"
+        direction TB
+        J --> J1[Controllers]
+        J --> J2[Services]
+        J --> J3[Dataset API]
+        J --> J4[Strategy Management]
+        J --> J5[Run Control]
+    end
+
+    %% Python Layer
+    subgraph "Python Engine Layer"
+        direction TB
+        P --> P1[Parser]
+        P --> P2[Strategy Runner]
+        P --> P3[Backtesting]
+        P --> P4[Indicators]
+        P --> P5[Exchange Adapters]
+    end
+
+    %% Data flow
+    F4 --> J
+    J --> D
+    J --> P
+    P --> D
 ```
 
 <h2 align="center">Текущая структура проекта</h2>
@@ -47,19 +84,25 @@ TradeLab/
 
 <h3 align="center">Фронтенд</h3>
 
-- Next.js 16
-- React 18
-- TypeScript
-- Tailwind CSS
-- Radix UI
-- Recharts
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white" />
+  <img alt="React" src="https://img.shields.io/badge/React-18-20232A?logo=react&logoColor=61DAFB" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white" />
+  <img alt="Radix UI" src="https://img.shields.io/badge/Radix_UI-161618?logo=radixui&logoColor=white" />
+  <img alt="Recharts" src="https://img.shields.io/badge/Recharts-22C55E?logo=chartdotjs&logoColor=white" />
+</p>
 
 <h3 align="center">Бэкенд</h3>
 
-- Java 17 + Spring Boot 3
-- Python 3.11+ + FastAPI
-- PostgreSQL 16
-- Docker / Docker Compose
+<p align="center">
+  <img alt="Java" src="https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white" />
+  <img alt="Spring Boot" src="https://img.shields.io/badge/Spring_Boot-3-6DB33F?logo=springboot&logoColor=white" />
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" />
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" />
+</p>
 
 <h2 align="center">Быстрый старт</h2>
 
