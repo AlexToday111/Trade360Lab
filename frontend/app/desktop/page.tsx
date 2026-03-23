@@ -10,6 +10,7 @@ import {
   FolderInput,
   GitCompare,
   Play,
+  Plus,
   SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SurfaceCard } from "@/components/shared/surface-card";
 import { DrawdownChart, EquityChart } from "@/features/runs/charts/run-charts";
 import { useRuns } from "@/features/runs/store/run-store";
-import { projects } from "@/lib/demo-data/projects";
+import { projects, type Project } from "@/lib/demo-data/projects";
 import { getProjectRuns } from "@/lib/project-runs";
 
 const DEFAULT_START_BALANCE_USD = 100_000;
@@ -48,25 +49,61 @@ function formatStrategyName(strategy: string) {
   return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function formatNowAsProjectTimestamp() {
+  return new Date().toISOString().slice(0, 16).replace("T", " ");
+}
+
+function createProjectId(name: string) {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `proj-${slug || "custom"}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
 export default function DesktopPage() {
   const { runs } = useRuns();
   const searchParams = useSearchParams();
   const requestedProjectId = searchParams.get("project");
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[0]?.id ?? "");
+
+  const [projectOptions, setProjectOptions] = useState<Project[]>(projects);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
 
   useEffect(() => {
     if (!requestedProjectId) {
       return;
     }
 
-    const hasProject = projects.some((project) => project.id === requestedProjectId);
-    if (hasProject) {
+    if (projectOptions.some((project) => project.id === requestedProjectId)) {
       setSelectedProjectId(requestedProjectId);
     }
-  }, [requestedProjectId]);
+  }, [projectOptions, requestedProjectId]);
 
-  const project =
-    projects.find((item) => item.id === selectedProjectId) ?? projects[0] ?? null;
+  const project = useMemo(() => {
+    if (!selectedProjectId) {
+      return null;
+    }
+    return projectOptions.find((item) => item.id === selectedProjectId) ?? null;
+  }, [projectOptions, selectedProjectId]);
+
+  const projectSelectionItems = useMemo(() => {
+    return projectOptions.map((item) => {
+      const itemRuns = getProjectRuns(runs, item.id);
+      const averagePnl =
+        itemRuns.length === 0
+          ? null
+          : itemRuns.reduce((total, run) => total + run.metrics.pnl, 0) / itemRuns.length;
+
+      return {
+        project: item,
+        runCount: itemRuns.length,
+        averagePnl,
+      };
+    });
+  }, [projectOptions, runs]);
 
   const projectRuns = useMemo(() => {
     if (!project) {
@@ -105,8 +142,7 @@ export default function DesktopPage() {
         ? `Sharpe ${primaryRun.metrics.sharpe.toFixed(2)} / Max DD ${primaryRun.metrics.maxDrawdown.toFixed(1)}%`
         : "n/a",
       actionTitle: "Настроить параметры проекта",
-      actionDescription:
-        "Комиссии, датасет, версия стратегии и пресеты запуска.",
+      actionDescription: "Комиссии, датасет, версия стратегии и пресеты запуска.",
       actionIcon: SlidersHorizontal,
       accent: "#33CC99",
       glow: "rgba(51, 204, 153, 0.3)",
@@ -116,16 +152,168 @@ export default function DesktopPage() {
       description: "Когда проект обновлялся в последний раз",
       value: project?.lastActive ?? "n/a",
       actionTitle: "Экспортировать артефакты",
-      actionDescription:
-        "Отчеты, результаты запусков и связанные файлы проекта.",
+      actionDescription: "Отчеты, результаты запусков и связанные файлы проекта.",
       actionIcon: Download,
       accent: "#5D9548",
       glow: "rgba(93, 149, 72, 0.3)",
     },
   ];
 
+  const canCreateProject = newProjectName.trim().length > 0;
+
+  const handleCreateProject = () => {
+    if (!canCreateProject) {
+      return;
+    }
+
+    const newProject: Project = {
+      id: createProjectId(newProjectName),
+      name: newProjectName.trim(),
+      description: newProjectDescription.trim() || "Новый проект для дальнейшей настройки.",
+      lastDataset: "Не выбран",
+      lastRunId: "run_new",
+      lastActive: formatNowAsProjectTimestamp(),
+      recentRuns: [],
+    };
+
+    setProjectOptions((current) => [newProject, ...current]);
+    setSelectedProjectId(newProject.id);
+    setNewProjectName("");
+    setNewProjectDescription("");
+    setIsCreateProjectOpen(false);
+  };
+
   if (!project) {
-    return null;
+    return (
+      <div className="flex h-full flex-col gap-5">
+        <SurfaceCard className="border-white/12 bg-[linear-gradient(140deg,rgba(16,22,32,0.96),rgba(9,13,21,0.94))]">
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-2xl font-semibold tracking-tight text-foreground">
+                  Выберите проект
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">
+                  Откройте существующий проект или создайте новый.
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="w-fit"
+                onClick={() => setIsCreateProjectOpen((current) => !current)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Добавить проект
+              </Button>
+            </div>
+
+            {isCreateProjectOpen ? (
+              <div className="rounded-[18px] border border-white/12 bg-[rgba(8,12,20,0.68)] p-4">
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+                  <div className="space-y-3">
+                    <input
+                      value={newProjectName}
+                      onChange={(event) => setNewProjectName(event.target.value)}
+                      placeholder="Название проекта"
+                      className="h-10 w-full rounded-[12px] border border-white/12 bg-[rgba(14,18,28,0.82)] px-3 text-sm text-foreground placeholder:text-muted-foreground/80 outline-none transition-colors focus:border-[hsl(var(--tl-glow)/0.5)]"
+                    />
+                    <textarea
+                      value={newProjectDescription}
+                      onChange={(event) => setNewProjectDescription(event.target.value)}
+                      placeholder="Краткое описание проекта"
+                      rows={3}
+                      className="w-full resize-none rounded-[12px] border border-white/12 bg-[rgba(14,18,28,0.82)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/80 outline-none transition-colors focus:border-[hsl(var(--tl-glow)/0.5)]"
+                    />
+                  </div>
+                  <div className="flex items-end gap-2 lg:flex-col lg:justify-end">
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      disabled={!canCreateProject}
+                      onClick={handleCreateProject}
+                    >
+                      Создать
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => setIsCreateProjectOpen(false)}
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {projectSelectionItems.map((item) => {
+                const isProfit = item.averagePnl !== null && item.averagePnl >= 0;
+
+                return (
+                  <div
+                    key={item.project.id}
+                    role="button"
+                    tabIndex={0}
+                    className="group rounded-[20px] border border-white/12 bg-[linear-gradient(155deg,rgba(20,27,38,0.95),rgba(9,13,21,0.95))] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_16px_32px_rgba(0,0,0,0.36)]"
+                    onClick={() => setSelectedProjectId(item.project.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedProjectId(item.project.id);
+                      }
+                    }}
+                  >
+                    <div className="text-base font-semibold text-foreground">
+                      {item.project.name}
+                    </div>
+                    <div className="mt-1 min-h-[36px] text-xs leading-relaxed text-muted-foreground">
+                      {item.project.description}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-[12px] border border-white/10 bg-[rgba(3,6,12,0.46)] px-2.5 py-2">
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                          Датасет
+                        </div>
+                        <div className="mt-1 text-foreground">{item.project.lastDataset}</div>
+                      </div>
+                      <div className="rounded-[12px] border border-white/10 bg-[rgba(3,6,12,0.46)] px-2.5 py-2">
+                        <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                          Запуски
+                        </div>
+                        <div className="mt-1 text-foreground">{item.runCount}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="text-[11px] text-muted-foreground">
+                        Ср. PnL:{" "}
+                        <span
+                          className={
+                            item.averagePnl === null
+                              ? "text-muted-foreground"
+                              : isProfit
+                                ? "font-medium text-status-success"
+                                : "font-medium text-status-failed"
+                          }
+                        >
+                          {item.averagePnl === null
+                            ? "n/a"
+                            : `${item.averagePnl >= 0 ? "+" : ""}${item.averagePnl.toFixed(1)}%`}
+                        </span>
+                      </div>
+                      <div className="rounded-full border border-white/12 px-2.5 py-1 text-[11px] text-foreground/90">
+                        Открыть
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </SurfaceCard>
+      </div>
+    );
   }
 
   return (
@@ -134,12 +322,12 @@ export default function DesktopPage() {
         title="Рабочий стол"
         actions={
           <>
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+            <Select value={project.id} onValueChange={setSelectedProjectId}>
               <SelectTrigger className="h-9 w-[240px] border-white/15 bg-[#0F141E] text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {projects.map((item) => (
+                {projectOptions.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name}
                   </SelectItem>
@@ -153,6 +341,9 @@ export default function DesktopPage() {
             <Button size="sm" variant="secondary">
               <GitCompare className="mr-2 h-4 w-4" />
               Сравнить
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link href={`/backtests?project=${project.id}`}>Все бэктесты проекта</Link>
             </Button>
           </>
         }
@@ -214,15 +405,6 @@ export default function DesktopPage() {
       </SurfaceCard>
 
       <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#0F141E]">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <div className="text-xs text-muted-foreground">
-            Запуски проекта:{" "}
-            <span className="font-medium text-foreground">{project.name}</span>
-          </div>
-          <Button asChild size="sm" variant="secondary" className="h-7 rounded-full px-3">
-            <Link href={`/backtests?project=${project.id}`}>Все бэктесты проекта</Link>
-          </Button>
-        </div>
         <div className="overflow-x-auto">
           <table className="min-w-[700px] w-full text-xs">
             <thead className="bg-[linear-gradient(135deg,hsl(var(--tl-glow)/0.22),hsl(var(--tl-glow-soft)/0.16))] text-foreground/90">
@@ -311,24 +493,15 @@ export default function DesktopPage() {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_360px]">
         <div className="grid gap-4 lg:grid-cols-2">
-          <ChartCard
-            title="Динамика капитала"
-            subtitle="Базовая визуализация выбранного проекта"
-          >
+          <ChartCard title="Динамика капитала">
             <EquityChart />
           </ChartCard>
-          <ChartCard
-            title="Текущая просадка"
-            subtitle="Контроль устойчивости сценария"
-          >
+          <ChartCard title="Текущая просадка">
             <DrawdownChart />
           </ChartCard>
         </div>
 
-        <SurfaceCard
-          title="Контекст проекта"
-          subtitle="То, что будет расширяться на рабочем столе"
-        >
+        <SurfaceCard title="Контекст проекта">
           <div className="space-y-3 text-xs">
             <div className="rounded-[18px] border border-border bg-panel-subtle p-4">
               <div className="mb-1 flex items-center gap-2 text-foreground">
