@@ -1,7 +1,7 @@
 <h1 align="center">TradeLab</h1>
 
 <p align="center">
-  <img src="./frontend/public/Logo.png" alt="Логотип TradeLab" width="320" />
+  <img src="./frontend/public/Logo.png" alt="T360Lab Logo" />
 </p>
 
 <p align="center">
