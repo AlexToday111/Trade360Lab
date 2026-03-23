@@ -1,13 +1,14 @@
-# TradeLab
+<h1 align="center">TradeLab</h1>
 
 <p align="center">
-  <img src="./frontend/public/Logo.png" alt="TradeLab logo" width="320" />
+  <img src="./frontend/public/Logo.png" alt="Логотип TradeLab" width="320" />
 </p>
 
-TradeLab is a monorepo for researching, running, and comparing trading scenarios.
-It includes a Next.js frontend, a Java API layer, and a Python market-data parser service.
+<p align="center">
+  Монорепозиторий платформы для исследования, запуска и сравнения торговых сценариев.
+</p>
 
-## Architecture (Mermaid)
+<h2 align="center">Архитектура</h2>
 
 ```mermaid
 flowchart LR
@@ -24,11 +25,11 @@ flowchart LR
     PyParser --> DB
 ```
 
-## Current Repository Structure
+<h2 align="center">Текущая структура проекта</h2>
 
 ```text
 TradeLab/
-|-- frontend/               # Next.js app (UI + API proxy routes)
+|-- frontend/               # Next.js приложение (UI + API proxy)
 |   |-- app/
 |   |-- components/
 |   |-- features/
@@ -37,14 +38,15 @@ TradeLab/
 |-- backend/
 |   |-- java/               # Spring Boot API
 |   `-- python/             # FastAPI parser/import service
-|-- docs/                   # Product/engineering docs
-|-- archive/                # Archived files and snapshots
-`-- docker-compose.yml      # Full stack local orchestration
+|-- docs/                   # Проектная документация
+|-- archive/                # Архивные материалы
+`-- docker-compose.yml      # Оркестрация всего стека
 ```
 
-## Tech Stack
+<h2 align="center">Стек технологий</h2>
 
-### Frontend
+<h3 align="center">Фронтенд</h3>
+
 - Next.js 16
 - React 18
 - TypeScript
@@ -52,29 +54,30 @@ TradeLab/
 - Radix UI
 - Recharts
 
-### Backend
-- Java 17 + Spring Boot 3 (REST API, JPA)
-- Python 3.11+ + FastAPI (data import/parser service)
+<h3 align="center">Бэкенд</h3>
+
+- Java 17 + Spring Boot 3
+- Python 3.11+ + FastAPI
 - PostgreSQL 16
 - Docker / Docker Compose
 
-## Quick Start
+<h2 align="center">Быстрый старт</h2>
 
-### Option A: Full stack in Docker (recommended)
+<h3 align="center">Вариант A: весь стек в Docker (рекомендуется)</h3>
 
 ```bash
 docker compose up --build
 ```
 
-Services:
+Сервисы:
 - Frontend: `http://localhost:3000`
 - Java API: `http://localhost:8080`
 - Python parser: `http://localhost:8000`
 - PostgreSQL: `localhost:5432`
 
-### Option B: Local development
+<h3 align="center">Вариант B: локальная разработка</h3>
 
-1. Frontend
+1. Фронтенд
 ```bash
 cd frontend
 npm install
@@ -96,10 +99,10 @@ cd backend/java
 mvn spring-boot:run
 ```
 
-## Detailed Documentation
+<h2 align="center">Подробная документация</h2>
 
-- Frontend guide: [`frontend/README.md`](./frontend/README.md)
-- Backend overview: [`backend/README.md`](./backend/README.md)
-- Java backend guide: [`backend/java/README.md`](./backend/java/README.md)
-- Python backend guide: [`backend/python/README.md`](./backend/python/README.md)
+- Фронтенд: [`frontend/README.md`](./frontend/README.md)
+- Обзор бэкенда: [`backend/README.md`](./backend/README.md)
+- Java API: [`backend/java/README.md`](./backend/java/README.md)
+- Python parser: [`backend/python/README.md`](./backend/python/README.md)
 

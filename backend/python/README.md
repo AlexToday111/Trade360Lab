@@ -1,16 +1,17 @@
-# TradeLab Python Parser Service
+<h1 align="center">TradeLab Python Parser</h1>
 
-FastAPI service for importing exchange candles into PostgreSQL.
-It is called by the Java backend (`/api/imports/candles`) and can also run standalone.
+<p align="center">
+  FastAPI сервис для импорта рыночных свечей в PostgreSQL.
+</p>
 
-## Stack
+<h2 align="center">Стек</h2>
 
 - Python 3.11+
 - FastAPI + Uvicorn
 - Psycopg (PostgreSQL)
 - Requests
 
-## Structure
+<h2 align="center">Структура</h2>
 
 ```text
 backend/python/
@@ -27,12 +28,12 @@ backend/python/
 `-- run_local_postgres.ps1
 ```
 
-## API
+<h2 align="center">API</h2>
 
 - `GET /health`
 - `POST /internal/import/candles`
 
-Example request:
+Пример запроса:
 
 ```json
 {
@@ -44,11 +45,11 @@ Example request:
 }
 ```
 
-## Environment
+<h2 align="center">Переменные окружения</h2>
 
-Create `.env` in `backend/python` from `.env.example`.
+Создай `.env` в `backend/python` на основе `.env.example`.
 
-Key variables:
+Ключевые переменные:
 
 - `DB_HOST`
 - `DB_PORT`
@@ -60,7 +61,7 @@ Key variables:
 - `BINANCE_API_SECRET`
 - `PYTHON_SERVICE_PORT`
 
-## Run Locally
+<h2 align="center">Запуск локально</h2>
 
 ```bash
 cd backend/python
@@ -70,22 +71,22 @@ pip install -r requirements.txt
 uvicorn parser.main:app --host 0.0.0.0 --port 8000
 ```
 
-On startup, the service initializes schema from `parser/schema.sql`.
+При старте сервис применяет `parser/schema.sql`.
 
-## Optional Local PostgreSQL
+<h2 align="center">Локальный PostgreSQL (опционально)</h2>
 
 ```powershell
 cd backend/python
 powershell -ExecutionPolicy Bypass -File .\run_local_postgres.ps1
 ```
 
-This script creates a local cluster on `localhost:55432` with:
+Скрипт поднимает кластер на `localhost:55432`:
 
-- DB: `tradelab`
-- User: `postgres`
-- Password: `postgres`
+- БД: `tradelab`
+- Пользователь: `postgres`
+- Пароль: `postgres`
 
-## Docker
+<h2 align="center">Docker</h2>
 
 ```bash
 docker build -t tradelab-python ./backend/python

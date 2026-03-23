@@ -1,17 +1,19 @@
-# TradeLab Java API
+<h1 align="center">TradeLab Java API</h1>
 
-Spring Boot service that exposes REST endpoints for datasets and candles, and orchestrates candle import through the Python parser.
+<p align="center">
+  Spring Boot сервис для работы с датасетами, свечами и оркестрации импорта через Python parser.
+</p>
 
-## Stack
+<h2 align="center">Стек</h2>
 
 - Java 17
 - Spring Boot 3
 - Spring Web
 - Spring Data JPA
-- PostgreSQL driver
+- PostgreSQL JDBC Driver
 - Maven
 
-## Project Structure
+<h2 align="center">Структура</h2>
 
 ```text
 backend/java/
@@ -21,13 +23,13 @@ backend/java/
 |   |-- repository/
 |   |-- entity/
 |   |-- dto/
-|   `-- client/           # Python parser HTTP client
+|   `-- client/           # HTTP-клиент Python parser
 `-- src/main/resources/
     |-- application.yml
     `-- schema.sql
 ```
 
-## API Endpoints
+<h2 align="center">Endpoints</h2>
 
 - `GET /api/health`
 - `GET /api/python/health`
@@ -39,36 +41,35 @@ backend/java/
 - `GET /api/candles`
 - `POST /api/imports/candles`
 
-## Configuration
+<h2 align="center">Конфигурация</h2>
 
-`src/main/resources/application.yml` supports these key env overrides:
+Основные переменные окружения (см. `application.yml`):
 
 - `SPRING_DATASOURCE_URL`
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
 - `PYTHON_PARSER_BASE_URL`
 
-Default local ports:
-
+Порты по умолчанию:
 - Java API: `8080`
 - Python parser: `8000`
-- PostgreSQL: `5432` (or custom)
+- PostgreSQL: `5432`
 
-## Run Locally
+<h2 align="center">Запуск локально</h2>
 
 ```bash
 cd backend/java
 mvn spring-boot:run
 ```
 
-## Build JAR
+<h2 align="center">Сборка</h2>
 
 ```bash
 cd backend/java
 mvn clean package -DskipTests
 ```
 
-## Docker
+<h2 align="center">Docker</h2>
 
 ```bash
 docker build -t tradelab-java ./backend/java

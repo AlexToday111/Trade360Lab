@@ -1,11 +1,10 @@
-# TradeLab Backend
+<h1 align="center">TradeLab Backend</h1>
 
-Backend is split into two services:
+<p align="center">
+  Бэкенд разделен на два сервиса: Java API и Python parser.
+</p>
 
-- `java/` - Spring Boot API for datasets, candles, and integration with parser.
-- `python/` - FastAPI parser/import service for exchange candle ingestion.
-
-## Backend Architecture
+<h2 align="center">Архитектура бэкенда</h2>
 
 ```mermaid
 flowchart LR
@@ -18,42 +17,42 @@ flowchart LR
     PyParser --> DB
 ```
 
-## Service Responsibilities
+<h2 align="center">Зоны ответственности</h2>
 
-### Java API (`backend/java`)
-- REST endpoints for:
-  - datasets CRUD (`/api/datasets`)
-  - candles query (`/api/candles`)
-  - parser import trigger (`/api/imports/candles`)
+<h3 align="center">Java API (`backend/java`)</h3>
+
+- REST API для:
+  - датасетов (`/api/datasets`)
+  - свечей (`/api/candles`)
+  - запуска импорта (`/api/imports/candles`)
   - health (`/api/health`, `/api/python/health`)
-- Stores dataset payloads in PostgreSQL.
-- Calls Python parser via HTTP client.
+- Работа с PostgreSQL (датасеты, чтение свечей)
+- Интеграция с Python parser по HTTP
 
-### Python Parser (`backend/python`)
-- Imports candles from supported exchanges (currently Binance).
-- Normalizes and upserts candles into PostgreSQL.
-- Exposes internal API:
+<h3 align="center">Python parser (`backend/python`)</h3>
+
+- Импорт свечей с бирж (сейчас Binance)
+- Нормализация и upsert свечей в PostgreSQL
+- Внутренние endpoints:
   - `GET /health`
   - `POST /internal/import/candles`
 
-## Quick Start
+<h2 align="center">Быстрый старт</h2>
 
-### Docker Compose (recommended)
-
-From repository root:
+<h3 align="center">Docker Compose (рекомендуется)</h3>
 
 ```bash
 docker compose up --build
 ```
 
-### Local run (manual)
+<h3 align="center">Локально</h3>
 
-1. Start PostgreSQL.
-2. Start Python parser (`backend/python`).
-3. Start Java API (`backend/java`).
+1. Поднять PostgreSQL
+2. Запустить Python parser (`backend/python`)
+3. Запустить Java API (`backend/java`)
 
-## Detailed Guides
+<h2 align="center">Подробные README</h2>
 
-- Java backend: [`java/README.md`](./java/README.md)
-- Python parser: [`python/README.md`](./python/README.md)
+- Java: [`java/README.md`](./java/README.md)
+- Python: [`python/README.md`](./python/README.md)
 

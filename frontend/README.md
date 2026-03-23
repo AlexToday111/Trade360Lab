@@ -1,8 +1,10 @@
-# TradeLab Frontend
+<h1 align="center">TradeLab Frontend</h1>
 
-Frontend application is built with Next.js (App Router) and provides the main UI for project workspace, datasets, backtests, and run analysis.
+<p align="center">
+  Фронтенд-приложение на Next.js (App Router) для работы с проектами, датасетами, бэктестами и результатами запусков.
+</p>
 
-## Stack
+<h2 align="center">Стек</h2>
 
 - Next.js 16
 - React 18
@@ -11,36 +13,35 @@ Frontend application is built with Next.js (App Router) and provides the main UI
 - Radix UI
 - Recharts
 
-## Main Structure
+<h2 align="center">Структура</h2>
 
 ```text
 frontend/
-|-- app/                 # App Router pages + API proxy routes
+|-- app/                 # страницы и API proxy маршруты
 |-- components/          # shell, shared, ui
-|-- features/            # domain-specific UI/state logic
-|-- lib/                 # demo data, types, utilities
-|-- public/              # static assets (icons, logo, favicon)
-`-- styles/              # global/theme styles
+|-- features/            # доменная логика интерфейса
+|-- lib/                 # демо-данные, типы, утилиты
+|-- public/              # статические ассеты (иконки, лого, favicon)
+`-- styles/              # глобальные стили и токены
 ```
 
-## Key Routes
+<h2 align="center">Ключевые маршруты</h2>
 
-- `/workspace` - main dashboard
-- `/desktop` - project desktop
-- `/data` - datasets and imports
-- `/backtests` - run list and filtering
-- `/runs/[id]` - run details
-- `/compare` - runs comparison
+- `/workspace` - обзорный дашборд
+- `/desktop` - рабочий стол проекта
+- `/data` - датасеты и импорт
+- `/backtests` - запуски и фильтрация
+- `/runs/[id]` - карточка запуска
+- `/compare` - сравнение запусков
 
-## API Integration
+<h2 align="center">Интеграция с API</h2>
 
-Frontend uses Next API routes under `app/api/*` as a proxy to Java API.
+Фронтенд использует Next API routes (`app/api/*`) как proxy к Java API.
 
-Env variable:
+Переменная окружения:
+- `BACKEND_API_BASE_URL` (по умолчанию: `http://127.0.0.1:8080`)
 
-- `BACKEND_API_BASE_URL` (default: `http://127.0.0.1:8080`)
-
-## Local Development
+<h2 align="center">Локальный запуск</h2>
 
 ```bash
 cd frontend
@@ -48,7 +49,7 @@ npm install
 npm run dev
 ```
 
-## Useful Commands
+<h2 align="center">Полезные команды</h2>
 
 - `npm run dev`
 - `npm run build`
