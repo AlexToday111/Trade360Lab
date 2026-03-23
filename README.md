@@ -1,54 +1,50 @@
+# TradeLab
+
 <p align="center">
-  <img src="./frontend/public/Logo.png" alt="TradeLab Logo" />
+  <img src="./frontend/public/Logo.png" alt="TradeLab logo" width="320" />
 </p>
-<h1 align="center">Trade360Lab</h1>
 
-Trade360Lab — это монорепозиторий платформы для исследования, подготовки данных, запуска и сравнения торговых сценариев. Основной интерфейс находится во `frontend` и построен на Next.js: в нём собраны рабочее пространство, экран данных, бэктесты, карточки запусков и сравнение результатов. Папка `backend` содержит серверный scaffold для дальнейшего развития API и служебной логики. Дополнительно в репозитории есть `docs` с проектной документацией и `archive` с архивными материалами, которые не участвуют в активной сборке.
+TradeLab is a monorepo for researching, running, and comparing trading scenarios.
+It includes a Next.js frontend, a Java API layer, and a Python market-data parser service.
 
-## Mermaid-схема
+## Architecture (Mermaid)
 
 ```mermaid
 flowchart LR
-    A[Trade360Lab]
+    UI[Frontend: Next.js]
+    APIProxy[Next API Routes]
+    JavaAPI[Backend: Java Spring Boot]
+    PyParser[Backend: Python FastAPI Parser]
+    DB[(PostgreSQL)]
 
-    A --> B[frontend]
-    A --> C[backend]
-    A --> D[docs]
-    A --> E[archive]
-
-    B --> B1[app]
-    B --> B2[components]
-    B --> B3[features]
-    B --> B4[lib]
-    B --> B5[public]
-    B --> B6[styles]
-
-    B2 --> B21[shell]
-    B2 --> B22[shared]
-    B2 --> B23[ui]
-
-    C --> C1[src]
+    UI --> APIProxy
+    APIProxy --> JavaAPI
+    JavaAPI --> PyParser
+    JavaAPI --> DB
+    PyParser --> DB
 ```
 
-## Структура проекта
+## Current Repository Structure
 
 ```text
-.
-|-- frontend/
-|   |-- app/          # маршруты App Router
-|   |-- components/   # shell, shared-компоненты и UI-примитивы
-|   |-- features/     # доменная логика
-|   |-- lib/          # демо-данные, типы и утилиты
-|   |-- public/       # статические ассеты
-|   `-- styles/       # дизайн-токены и глобальные стили
+TradeLab/
+|-- frontend/               # Next.js app (UI + API proxy routes)
+|   |-- app/
+|   |-- components/
+|   |-- features/
+|   |-- lib/
+|   `-- public/
 |-- backend/
-|   `-- src/          # backend scaffold
-|-- docs/             # проектная документация
-`-- archive/          # архивные материалы
+|   |-- java/               # Spring Boot API
+|   `-- python/             # FastAPI parser/import service
+|-- docs/                   # Product/engineering docs
+|-- archive/                # Archived files and snapshots
+`-- docker-compose.yml      # Full stack local orchestration
 ```
 
-## Стек фронтенда
+## Tech Stack
 
+### Frontend
 - Next.js 16
 - React 18
 - TypeScript
@@ -56,54 +52,54 @@ flowchart LR
 - Radix UI
 - Recharts
 
-## Основные маршруты фронтенда
+### Backend
+- Java 17 + Spring Boot 3 (REST API, JPA)
+- Python 3.11+ + FastAPI (data import/parser service)
+- PostgreSQL 16
+- Docker / Docker Compose
 
-- `/workspace` — обзорный дашборд
-- `/desktop` — рабочее пространство проекта
-- `/data` — данные и импорт
-- `/backtests` — очередь и запуск бэктестов
-- `/runs/[id]` — детальная карточка запуска
-- `/compare` — сравнение нескольких запусков
-- `/research`, `/deploy`, `/settings` — заготовки под отдельные разделы
+## Quick Start
 
-## Быстрый старт
-
-Требования:
-
-- Node.js 20+
-- npm 10+
-
-Установка зависимостей:
+### Option A: Full stack in Docker (recommended)
 
 ```bash
-npm run install:all
+docker compose up --build
 ```
 
-Запуск фронтенда:
+Services:
+- Frontend: `http://localhost:3000`
+- Java API: `http://localhost:8080`
+- Python parser: `http://localhost:8000`
+- PostgreSQL: `localhost:5432`
 
+### Option B: Local development
+
+1. Frontend
 ```bash
+cd frontend
+npm install
 npm run dev
 ```
 
-Фронтенд будет доступен по адресу `http://localhost:3000`.
-
-Запуск backend:
-
+2. Python parser
 ```bash
-npm run dev:backend
+cd backend/python
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn parser.main:app --host 0.0.0.0 --port 8000
 ```
 
-Backend будет доступен по адресу `http://localhost:4000` и отдаёт `GET /health`.
+3. Java API
+```bash
+cd backend/java
+mvn spring-boot:run
+```
 
-## Полезные команды
+## Detailed Documentation
 
-- `npm run dev` — запустить фронтенд
-- `npm run build` — собрать фронтенд
-- `npm run start` — запустить production-сборку фронтенда
-- `npm run typecheck` — проверить типы во фронтенде
-- `npm run lint` — запустить линтинг фронтенда
-- `npm run dev:frontend` — явно запустить фронтенд
-- `npm run dev:backend` — запустить backend
-- `npm run install:frontend` — установить зависимости фронтенда
-- `npm run install:backend` — установить зависимости backend
-- `npm run install:all` — установить все зависимости
+- Frontend guide: [`frontend/README.md`](./frontend/README.md)
+- Backend overview: [`backend/README.md`](./backend/README.md)
+- Java backend guide: [`backend/java/README.md`](./backend/java/README.md)
+- Python backend guide: [`backend/python/README.md`](./backend/python/README.md)
+

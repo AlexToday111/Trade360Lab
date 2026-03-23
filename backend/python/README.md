@@ -1,26 +1,54 @@
 # TradeLab Python Parser Service
 
-Python service for importing exchange candles into PostgreSQL. The service exposes an internal HTTP API and is designed to be called later from the Java backend.
+FastAPI service for importing exchange candles into PostgreSQL.
+It is called by the Java backend (`/api/imports/candles`) and can also run standalone.
 
-## Requirements
+## Stack
 
 - Python 3.11+
-- PostgreSQL
+- FastAPI + Uvicorn
+- Psycopg (PostgreSQL)
+- Requests
 
-## Install
+## Structure
 
-```bash
-cd backend/python
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+```text
+backend/python/
+|-- parser/
+|   |-- main.py
+|   |-- config.py
+|   |-- db.py
+|   |-- schema.sql
+|   |-- exchanges/
+|   |   `-- binance/
+|   |-- repositories/
+|   `-- services/
+|-- requirements.txt
+`-- run_local_postgres.ps1
+```
+
+## API
+
+- `GET /health`
+- `POST /internal/import/candles`
+
+Example request:
+
+```json
+{
+  "exchange": "binance",
+  "symbol": "BTCUSDT",
+  "interval": "1h",
+  "from": "2024-01-01T00:00:00Z",
+  "to": "2024-01-10T00:00:00Z"
+}
 ```
 
 ## Environment
 
 Create `.env` in `backend/python` from `.env.example`.
 
-Required variables:
+Key variables:
 
 - `DB_HOST`
 - `DB_PORT`
@@ -32,85 +60,34 @@ Required variables:
 - `BINANCE_API_SECRET`
 - `PYTHON_SERVICE_PORT`
 
-## Run service
+## Run Locally
 
 ```bash
 cd backend/python
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
 uvicorn parser.main:app --host 0.0.0.0 --port 8000
 ```
 
-Or:
+On startup, the service initializes schema from `parser/schema.sql`.
 
-```bash
-cd backend/python
-python -m parser.main
-```
-
-On startup the service connects to PostgreSQL and applies `parser/schema.sql`.
-
-## Optional local PostgreSQL
-
-If your system PostgreSQL credentials are unknown or you want an isolated local database for this service, run:
+## Optional Local PostgreSQL
 
 ```powershell
 cd backend/python
 powershell -ExecutionPolicy Bypass -File .\run_local_postgres.ps1
 ```
 
-This starts a user-owned PostgreSQL cluster on `localhost:55432` with:
+This script creates a local cluster on `localhost:55432` with:
 
-- database: `tradelab`
-- user: `postgres`
-- password: `postgres`
+- DB: `tradelab`
+- User: `postgres`
+- Password: `postgres`
 
-Then set `DB_PORT=55432` in your local `.env`.
-
-## Health check
+## Docker
 
 ```bash
-curl http://localhost:8000/health
+docker build -t tradelab-python ./backend/python
 ```
 
-Expected response:
-
-```json
-{
-  "status": "ok",
-  "service": "python-parser"
-}
-```
-
-## Import candles
-
-```bash
-curl -X POST http://localhost:8000/internal/import/candles \
-  -H "Content-Type: application/json" \
-  -d '{
-    "exchange": "binance",
-    "symbol": "BTCUSDT",
-    "interval": "1h",
-    "from": "2024-01-01T00:00:00Z",
-    "to": "2024-01-10T00:00:00Z"
-  }'
-```
-
-Expected response shape:
-
-```json
-{
-  "status": "success",
-  "exchange": "binance",
-  "symbol": "BTCUSDT",
-  "interval": "1h",
-  "imported": 123,
-  "from": "2024-01-01T00:00:00Z",
-  "to": "2024-01-10T00:00:00Z"
-}
-```
-
-## Notes for Java integration
-
-- `GET /health` can be used for readiness checks.
-- `POST /internal/import/candles` accepts a fixed JSON contract and returns a synchronous import result.
-- The service currently supports only `binance`.
-- Candle persistence is idempotent-friendly through PostgreSQL `ON CONFLICT DO UPDATE` on `(exchange, symbol, interval, open_time)`.
