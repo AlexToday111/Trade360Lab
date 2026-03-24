@@ -3,7 +3,8 @@ package com.example.back.dto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.List;
+
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -11,6 +12,6 @@ import java.util.List;
 public class StrategyValidationResponse {
     private Boolean valid;
     private String name;
-    private List<String> parametersSchema;
+    private Map<String, Object> parametersSchema;
     private String error;
 }

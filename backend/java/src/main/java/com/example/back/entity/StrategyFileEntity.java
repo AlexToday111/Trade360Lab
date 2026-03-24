@@ -10,32 +10,33 @@ import java.time.Instant;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity(name = "strategy_file")
+@Entity
+@Table(name = "strategy_files")
 public class StrategyFileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "filename", nullable = false)
     private String fileName;
 
-    @Column(nullable = false)
+    @Column(name = "storage_path", nullable = false)
     private String storagePath;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StrategyStatus status;
 
-    @Column
+    @Column(name = "validation_error", columnDefinition = "TEXT")
     private String validationError;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "parameters_schema_json", columnDefinition = "TEXT")
     private String parametersSchemaJson;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @PrePersist

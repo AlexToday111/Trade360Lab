@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public record StrategyResponse(
@@ -15,23 +15,23 @@ public record StrategyResponse(
         String fileName,
         StrategyFileEntity.StrategyStatus status,
         String validationError,
-        List<String> parametersSchema,
+        Map<String, Object> parametersSchema,
         Instant createdAt
 ) {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static StrategyResponse fromEntity(StrategyFileEntity entity) {
-        List<String> parametersSchema = null;
+        Map<String, Object> parametersSchema = null;
 
         if (entity.getParametersSchemaJson() != null && !entity.getParametersSchemaJson().isEmpty()) {
             try {
                 parametersSchema = objectMapper.readValue(
                         entity.getParametersSchemaJson(),
-                        new TypeReference<List<String>>() {}
+                        new TypeReference<Map<String, Object>>() {}
                 );
             } catch (Exception e) {
                 log.error("Failed to parse parametersSchemaJson", e);
-                parametersSchema = List.of();
+                parametersSchema = Map.of();
             }
         }
 
