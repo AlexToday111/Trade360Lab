@@ -49,6 +49,7 @@ frontend/
 cd frontend
 npm install
 npm run dev
+
 ```
 
 <h2 align="center">Полезные команды</h2>
