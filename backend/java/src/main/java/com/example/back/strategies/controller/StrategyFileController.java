@@ -1,7 +1,7 @@
-package com.example.back.controller;
+package com.example.back.strategies.controller;
 
-import com.example.back.dto.StrategyResponse;
-import com.example.back.service.StrategyFileService;
+import com.example.back.strategies.dto.StrategyResponse;
+import com.example.back.strategies.service.StrategyFileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

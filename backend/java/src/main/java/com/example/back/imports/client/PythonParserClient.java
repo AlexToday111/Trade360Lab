@@ -4,10 +4,10 @@ import com.example.back.common.config.PythonClientConfig;
 import com.example.back.imports.dto.ImportCandlesRequest;
 import com.example.back.imports.dto.ImportCandlesResponse;
 import com.example.back.imports.dto.PythonHealthResponse;
-import com.example.back.dto.PythonRunExecuteRequest;
-import com.example.back.dto.PythonRunExecuteResponse;
-import com.example.back.dto.StrategyValidationRequest;
-import com.example.back.dto.StrategyValidationResponse;
+import com.example.back.runs.dto.PythonRunExecuteRequest;
+import com.example.back.runs.dto.PythonRunExecuteResponse;
+import com.example.back.strategies.dto.StrategyValidationRequest;
+import com.example.back.strategies.dto.StrategyValidationResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -45,9 +45,9 @@ public class PythonParserClient {
                 .body(StrategyValidationResponse.class);
     }
 
-    public PythonRunExecuteResponse executeRun(PythonRunExecuteRequest request){
+    public PythonRunExecuteResponse executeRun(PythonRunExecuteRequest request) {
         return restClient.post()
-                .uri("/internal/runs/exchange")
+                .uri("/internal/runs/execute")
                 .body(request)
                 .retrieve()
                 .body(PythonRunExecuteResponse.class);

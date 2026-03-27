@@ -1,6 +1,6 @@
-package com.example.back.dto;
+package com.example.back.strategies.dto;
 
-import com.example.back.entity.StrategyFileEntity;
+import com.example.back.strategies.entity.StrategyFileEntity;
 
 import java.util.List;
 

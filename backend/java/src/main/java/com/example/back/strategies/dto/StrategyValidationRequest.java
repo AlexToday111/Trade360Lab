@@ -1,4 +1,4 @@
-package com.example.back.dto;
+package com.example.back.strategies.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

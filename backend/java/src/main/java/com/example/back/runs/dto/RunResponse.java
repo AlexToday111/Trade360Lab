@@ -1,4 +1,4 @@
-package com.example.back.dto;
+package com.example.back.runs.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -6,15 +6,22 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PythonRunExecuteRequest {
+public class RunResponse {
 
-    @NotBlank(message = "Путь к файлу стратегии не может быть пустым")
-    private String strategyFilePath;
+    @NotNull(message = "ID запуска не может быть пустым")
+    private Long id;
+
+    @NotNull(message = "ID стратегии не может быть пустым")
+    private Long strategyId;
+
+    @NotBlank(message = "Статус не может быть пустым")
+    private String status;
 
     @NotBlank(message = "Биржа не может быть пустой")
     private String exchange;
@@ -33,4 +40,13 @@ public class PythonRunExecuteRequest {
 
     @NotNull(message = "Параметры не могут быть пустыми")
     private Map<String, Object> params;
+
+    private Map<String, Object> metrics;
+
+    private String errorMessage;
+
+    @NotNull(message = "Дата создания не может быть пустой")
+    private Instant createdAt;
+
+    private Instant finishedAt;
 }

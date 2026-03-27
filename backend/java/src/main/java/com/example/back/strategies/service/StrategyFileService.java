@@ -1,11 +1,11 @@
-package com.example.back.service;
+package com.example.back.strategies.service;
 
 import com.example.back.imports.client.PythonParserClient;
-import com.example.back.dto.StrategyResponse;
-import com.example.back.dto.StrategyValidationRequest;
-import com.example.back.dto.StrategyValidationResponse;
-import com.example.back.entity.StrategyFileEntity;
-import com.example.back.repository.StrategyFileRepository;
+import com.example.back.strategies.dto.StrategyResponse;
+import com.example.back.strategies.dto.StrategyValidationRequest;
+import com.example.back.strategies.dto.StrategyValidationResponse;
+import com.example.back.strategies.entity.StrategyFileEntity;
+import com.example.back.strategies.repository.StrategyFileRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

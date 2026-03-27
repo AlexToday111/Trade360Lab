@@ -1,4 +1,4 @@
-package com.example.back.dto;
+package com.example.back.runs.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

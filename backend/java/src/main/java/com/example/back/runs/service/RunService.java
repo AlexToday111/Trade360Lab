@@ -1,14 +1,14 @@
-package com.example.back.service;
+package com.example.back.runs.service;
 
 import com.example.back.imports.client.PythonParserClient;
-import com.example.back.dto.CreateRunRequest;
-import com.example.back.dto.PythonRunExecuteRequest;
-import com.example.back.dto.PythonRunExecuteResponse;
-import com.example.back.dto.RunResponse;
-import com.example.back.entity.RunEntity;
-import com.example.back.entity.StrategyFileEntity;
-import com.example.back.repository.RunRepository;
-import com.example.back.repository.StrategyFileRepository;
+import com.example.back.runs.dto.CreateRunRequest;
+import com.example.back.runs.dto.PythonRunExecuteRequest;
+import com.example.back.runs.dto.PythonRunExecuteResponse;
+import com.example.back.runs.dto.RunResponse;
+import com.example.back.runs.entity.RunEntity;
+import com.example.back.runs.repository.RunRepository;
+import com.example.back.strategies.entity.StrategyFileEntity;
+import com.example.back.strategies.repository.StrategyFileRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

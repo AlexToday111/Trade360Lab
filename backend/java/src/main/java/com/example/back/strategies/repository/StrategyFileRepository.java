@@ -1,6 +1,6 @@
-package com.example.back.repository;
+package com.example.back.strategies.repository;
 
-import com.example.back.entity.StrategyFileEntity;
+import com.example.back.strategies.entity.StrategyFileEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

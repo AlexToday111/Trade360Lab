@@ -1,4 +1,4 @@
-package com.example.back.entity;
+package com.example.back.strategies.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
