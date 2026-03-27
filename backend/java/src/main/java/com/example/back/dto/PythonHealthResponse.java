@@ -1,26 +1,16 @@
 package com.example.back.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
 public class PythonHealthResponse {
 
+    @NotBlank
     private String status;
+
+    @NotBlank
     private String service;
-
-    public PythonHealthResponse() {
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public void setService(String service) {
-        this.service = service;
-    }
 }

@@ -1,70 +1,32 @@
 package com.example.back.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
 public class ImportCandlesResponse {
 
+    @NotBlank
     private String status;
+
+    @NotBlank
     private String exchange;
+
+    @NotBlank
     private String symbol;
+
+    @NotBlank
     private String interval;
+
+    @NotNull
     private int imported;
+
+    @NotBlank
     private String from;
+
+    @NotBlank
     private String to;
-
-    public ImportCandlesResponse() {}
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getExchange() {
-        return exchange;
-    }
-
-    public void setExchange(String exchange) {
-        this.exchange = exchange;
-    }
-
-    public String getSymbol() {
-        return symbol;
-    }
-
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
-
-    public String getInterval() {
-        return interval;
-    }
-
-    public void setInterval(String interval) {
-        this.interval = interval;
-    }
-
-    public int getImported() {
-        return imported;
-    }
-
-    public void setImported(int imported) {
-        this.imported = imported;
-    }
-
-    public String getFrom() {
-        return from;
-    }
-
-    public void setFrom(String from) {
-        this.from = from;
-    }
-
-    public String getTo() {
-        return to;
-    }
-
-    public void setTo(String to) {
-        this.to = to;
-    }
 }
