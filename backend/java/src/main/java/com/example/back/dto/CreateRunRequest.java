@@ -11,24 +11,24 @@ import java.util.Map;
 @NoArgsConstructor
 public class CreateRunRequest {
 
-    @NotNull
+    @NotNull(message = "ID стратегии обязателен")
     private Long strategyId;
 
-    @NotBlank
+    @NotBlank(message = "Биржа не может быть пустой")
     private String exchange;
 
-    @NotBlank
+    @NotBlank(message = "Символ (торговая пара) не может быть пустым")
     private String symbol;
 
-    @NotBlank
+    @NotBlank(message = "Интервал свечей не может быть пустым")
     private String interval;
 
-    @NotBlank
+    @NotBlank(message = "Дата начала (from) не может быть пустой")
     private String from;
 
-    @NotBlank
+    @NotBlank(message = "Дата окончания (to) не может быть пустой")
     private String to;
 
-    @NotNull
+    @NotNull(message = "Параметры стратегии обязательны")
     private Map<String, Object> params;
 }

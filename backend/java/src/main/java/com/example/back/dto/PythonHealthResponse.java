@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PythonHealthResponse {
 
-    @NotBlank
+    @NotBlank(message = "Статус не может быть пустым")
     private String status;
 
-    @NotBlank
+    @NotBlank(message = "Название сервиса не может быть пустым")
     private String service;
 }

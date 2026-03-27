@@ -9,24 +9,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ImportCandlesResponse {
 
-    @NotBlank
+    @NotBlank(message = "Статус операции не может быть пустым")
     private String status;
 
-    @NotBlank
+    @NotBlank(message = "Биржа не может быть пустой")
     private String exchange;
 
-    @NotBlank
+    @NotBlank(message = "Символ (торговая пара) не может быть пустым")
     private String symbol;
 
-    @NotBlank
+    @NotBlank(message = "Интервал свечей не может быть пустым")
     private String interval;
 
-    @NotNull
+    @NotNull(message = "Количество импортированных свечей обязательно")
     private int imported;
 
-    @NotBlank
+    @NotBlank(message = "Дата начала (from) не может быть пустой")
     private String from;
 
-    @NotBlank
+    @NotBlank(message = "Дата окончания (to) не может быть пустой")
     private String to;
 }

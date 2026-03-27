@@ -8,18 +8,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ImportCandlesRequest {
 
-    @NotBlank
+    @NotBlank(message = "Биржа не может быть пустой")
     private String exchange;
 
-    @NotBlank
+    @NotBlank(message = "Символ (торговая пара) не может быть пустым")
     private String symbol;
 
-    @NotBlank
+    @NotBlank(message = "Интервал свечей не может быть пустым")
     private String interval;
 
-    @NotBlank
+    @NotBlank(message = "Дата начала (from) не может быть пустой")
     private String from;
 
-    @NotBlank
+    @NotBlank(message = "Дата окончания (to) не может быть пустой")
     private String to;
 }

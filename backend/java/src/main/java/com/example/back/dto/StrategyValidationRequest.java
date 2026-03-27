@@ -1,5 +1,6 @@
 package com.example.back.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,5 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class StrategyValidationRequest {
+    @NotBlank(message = "Путь к файлу не может быть пустым")
     private String filePath;
 }
