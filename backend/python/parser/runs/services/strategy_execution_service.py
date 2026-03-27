@@ -7,8 +7,8 @@ from types import ModuleType
 from uuid import uuid4
 
 from parser.models.candle import Candle
-from parser.models.dto import RunExecuteRequest, RunExecuteResponse
 from parser.repositories.candle_repository import CandleRepository
+from parser.runs.dto.run_execute_dto import RunExecuteRequest, RunExecuteResponse
 
 
 logger = logging.getLogger(__name__)

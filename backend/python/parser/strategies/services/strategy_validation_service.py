@@ -5,7 +5,7 @@ from pathlib import Path
 from types import ModuleType
 from uuid import uuid4
 
-from parser.models.dto import StrategyValidationResponse
+from parser.strategies.dto.strategy_validation_dto import StrategyValidationResponse
 
 
 logger = logging.getLogger(__name__)
