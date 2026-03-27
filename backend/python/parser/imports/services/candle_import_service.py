@@ -1,18 +1,18 @@
 import logging
 from datetime import UTC, datetime
 
-from parser.exceptions import ValidationError
-from parser.exchanges.binance.mapper import map_binance_klines
-from parser.exchanges.factory import get_exchange_client
-from parser.models.dto import CandleImportRequest, CandleImportResponse
-from parser.repositories.candle_repository import CandleRepository
+from parser.common.exceptions import ValidationError
+from parser.imports.dto.candle_import_dto import CandleImportRequest, CandleImportResponse
+from parser.imports.exchanges.binance.mapper import map_binance_klines
+from parser.imports.exchanges.factory import get_exchange_client
+from parser.imports.repositories.candle_import_repository import CandleImportRepository
 
 
 logger = logging.getLogger(__name__)
 
 
 class CandleImportService:
-    def __init__(self, candle_repository: CandleRepository) -> None:
+    def __init__(self, candle_repository: CandleImportRepository) -> None:
         self.candle_repository = candle_repository
 
     def import_candles(self, request: CandleImportRequest) -> CandleImportResponse:

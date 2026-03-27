@@ -4,9 +4,9 @@ from typing import Any
 
 import requests
 
-from parser.config import settings
-from parser.exceptions import ExchangeError
-from parser.exchanges.base import BaseExchangeClient
+from parser.common.config.settings import settings
+from parser.common.exceptions import ExchangeError
+from parser.imports.exchanges.base import BaseExchangeClient
 
 
 class BinanceClient(BaseExchangeClient):

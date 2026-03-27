@@ -1,6 +1,6 @@
-from parser.exceptions import ExchangeError
-from parser.exchanges.base import BaseExchangeClient
-from parser.exchanges.binance.client import BinanceClient
+from parser.common.exceptions import ExchangeError
+from parser.imports.exchanges.base import BaseExchangeClient
+from parser.imports.exchanges.binance.client import BinanceClient
 
 
 def get_exchange_client(exchange: str) -> BaseExchangeClient:

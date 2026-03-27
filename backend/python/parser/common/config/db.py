@@ -2,8 +2,8 @@ from pathlib import Path
 
 import psycopg
 
-from parser.config import settings
-from parser.exceptions import RepositoryError
+from parser.common.config.settings import settings
+from parser.common.exceptions import RepositoryError
 
 
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")

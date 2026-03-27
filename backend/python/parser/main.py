@@ -4,13 +4,14 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from parser.config import settings
-from parser.db import get_connection, initialize_schema
-from parser.exceptions import AppError
-from parser.logging_setup import configure_logging
+from parser.common.config.db import get_connection, initialize_schema
+from parser.common.config.settings import settings
+from parser.common.exceptions import AppError
+from parser.common.util.logging import configure_logging
+from parser.imports.dto.candle_import_dto import CandleImportRequest, CandleImportResponse
+from parser.imports.repositories.candle_import_repository import CandleImportRepository
+from parser.imports.services.candle_import_service import CandleImportService
 from parser.models.dto import (
-    CandleImportRequest,
-    CandleImportResponse,
     HealthResponse,
     RunExecuteRequest,
     RunExecuteResponse,
@@ -18,7 +19,6 @@ from parser.models.dto import (
     StrategyValidationResponse,
 )
 from parser.repositories.candle_repository import CandleRepository
-from parser.services.candle_import_service import CandleImportService
 from parser.services.strategy_execution_service import StrategyExecutionService
 from parser.services.strategy_validation_service import StrategyValidationService
 
@@ -57,7 +57,7 @@ def create_app() -> FastAPI:
         logger.info("Incoming candle import request")
         connection = get_connection()
         try:
-            repository = CandleRepository(connection)
+            repository = CandleImportRepository(connection)
             service = CandleImportService(repository)
             return service.import_candles(request)
         finally:
