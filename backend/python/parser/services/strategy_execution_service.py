@@ -22,8 +22,14 @@ class StrategyExecutionService:
         exchange = request.exchange.strip().lower()
         symbol = request.symbol.strip().upper()
         interval = request.interval.strip()
-        from_time = self._normalize_datetime(request.from_time)
-        to_time = self._normalize_datetime(request.to_time)
+        from_time = self._parse_datetime(request.from_time, "from")
+        if from_time is None:
+            return self._failed(f"Invalid datetime for 'from': {request.from_time}")
+
+        to_time = self._parse_datetime(request.to_time, "to")
+        if to_time is None:
+            return self._failed(f"Invalid datetime for 'to': {request.to_time}")
+
         strategy_path = Path(request.strategy_file_path).expanduser().resolve(strict=False)
 
         logger.info(
@@ -48,12 +54,22 @@ class StrategyExecutionService:
         module_name = f"strategy_execution_{uuid4().hex}"
 
         try:
-            module = self._load_module(module_name, strategy_path)
+            try:
+                module = self._load_module(module_name, strategy_path)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("Failed to load strategy module from %s", strategy_path)
+                return self._failed(f"Failed to load strategy module: {exc}")
+
             strategy_class = getattr(module, "Strategy", None)
             if strategy_class is None or not isinstance(strategy_class, type):
                 return self._failed("Strategy class not found")
 
-            strategy = strategy_class()
+            try:
+                strategy = strategy_class()
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("Failed to instantiate Strategy from %s", strategy_path)
+                return self._failed(f"Failed to instantiate Strategy: {exc}")
+
             run_method = getattr(strategy, "run", None)
             if not callable(run_method):
                 return self._failed("Strategy.run method not found")
@@ -66,7 +82,7 @@ class StrategyExecutionService:
                 to_time=to_time,
             )
             if not candles:
-                return self._failed("Candles not found for requested range")
+                return self._failed("candles not found for requested range")
 
             candles_payload = [self._serialize_candle(candle) for candle in candles]
             logger.info(
@@ -82,14 +98,14 @@ class StrategyExecutionService:
                 return self._failed(f"Strategy.run raised exception: {exc}")
 
             if not isinstance(result, dict):
-                return self._failed("Invalid run result")
+                return self._failed("invalid run result")
 
             if "metrics" not in result:
-                return self._failed("Metrics missing in result")
+                return self._failed("metrics missing in result")
 
             metrics = result["metrics"]
             if not isinstance(metrics, dict):
-                return self._failed("Invalid run result")
+                return self._failed("invalid run result")
 
             logger.info(
                 "Strategy run completed successfully: strategy_file=%s candles_count=%s",
@@ -115,6 +131,19 @@ class StrategyExecutionService:
         return module
 
     @staticmethod
+    def _parse_datetime(value: str, field_name: str) -> datetime | None:
+        try:
+            normalized = value.replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            logger.warning("Invalid datetime provided for %s: %s", field_name, value)
+            return None
+
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC)
+
+    @staticmethod
     def _normalize_datetime(value: datetime) -> datetime:
         if value.tzinfo is None:
             return value.replace(tzinfo=UTC)
@@ -123,8 +152,8 @@ class StrategyExecutionService:
     @staticmethod
     def _serialize_candle(candle: Candle) -> dict[str, object]:
         return {
-            "open_time": candle.open_time.astimezone(UTC).isoformat(),
-            "close_time": candle.close_time.astimezone(UTC).isoformat(),
+            "open_time": StrategyExecutionService._normalize_datetime(candle.open_time).isoformat(),
+            "close_time": StrategyExecutionService._normalize_datetime(candle.close_time).isoformat(),
             "open": float(candle.open),
             "high": float(candle.high),
             "low": float(candle.low),

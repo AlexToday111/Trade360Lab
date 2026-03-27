@@ -60,8 +60,8 @@ class RunExecuteRequest(BaseModel):
     exchange: str
     symbol: str
     interval: str
-    from_time: datetime = Field(alias="from", serialization_alias="from")
-    to_time: datetime = Field(alias="to", serialization_alias="to")
+    from_time: str = Field(alias="from", serialization_alias="from")
+    to_time: str = Field(alias="to", serialization_alias="to")
     params: dict[str, Any] = Field(default_factory=dict)
 
 
