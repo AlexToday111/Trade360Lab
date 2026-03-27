@@ -6,8 +6,8 @@ from pathlib import Path
 from types import ModuleType
 from uuid import uuid4
 
-from parser.models.candle import Candle
-from parser.repositories.candle_repository import CandleRepository
+from parser.candles.models.candle import Candle
+from parser.candles.repositories.candle_repository import CandleRepository
 from parser.runs.dto.run_execute_dto import RunExecuteRequest, RunExecuteResponse
 
 

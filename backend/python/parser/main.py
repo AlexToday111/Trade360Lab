@@ -3,7 +3,9 @@ import logging
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
+from parser.candles.repositories.candle_repository import CandleRepository
 from parser.common.config.db import get_connection, initialize_schema
 from parser.common.config.settings import settings
 from parser.common.exceptions import AppError
@@ -11,8 +13,6 @@ from parser.common.util.logging import configure_logging
 from parser.imports.dto.candle_import_dto import CandleImportRequest, CandleImportResponse
 from parser.imports.repositories.candle_import_repository import CandleImportRepository
 from parser.imports.services.candle_import_service import CandleImportService
-from parser.models.dto import HealthResponse
-from parser.repositories.candle_repository import CandleRepository
 from parser.runs.dto.run_execute_dto import RunExecuteRequest, RunExecuteResponse
 from parser.runs.services.strategy_execution_service import StrategyExecutionService
 from parser.strategies.dto.strategy_validation_dto import (
@@ -23,6 +23,11 @@ from parser.strategies.services.strategy_validation_service import StrategyValid
 
 
 logger = logging.getLogger(__name__)
+
+
+class HealthResponse(BaseModel):
+    status: str
+    service: str
 
 
 def create_app() -> FastAPI:

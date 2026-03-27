@@ -2,8 +2,8 @@ from typing import Sequence
 
 import psycopg
 
+from parser.candles.models.candle import Candle
 from parser.common.exceptions import RepositoryError
-from parser.models.candle import Candle
 
 
 class CandleImportRepository:

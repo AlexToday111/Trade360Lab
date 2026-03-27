@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from parser.models.candle import Candle
+from parser.candles.models.candle import Candle
 
 
 def map_binance_kline(symbol: str, interval: str, raw_kline: list) -> Candle:
