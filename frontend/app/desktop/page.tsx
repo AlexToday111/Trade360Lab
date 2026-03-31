@@ -376,7 +376,7 @@ export default function DesktopPage() {
         actions={
           <>
             <Select value={project.id} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="h-9 w-[240px] border-white/15 bg-[#0F141E] text-xs">
+              <SelectTrigger className="h-11 w-[260px] justify-center rounded-[16px] border-white/18 bg-[linear-gradient(145deg,rgba(28,38,62,0.96),rgba(12,18,30,0.98))] px-4 text-[12px] font-semibold tracking-[0.08em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_30px_rgba(3,8,18,0.45),0_0_0_1px_rgba(92,163,255,0.14)] transition hover:border-[rgba(129,190,255,0.5)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_14px_34px_rgba(6,12,26,0.52),0_0_24px_rgba(76,166,255,0.22)] focus:ring-[rgba(125,188,255,0.5)] [&>span]:w-full [&>span]:text-center [&>svg]:hidden">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
