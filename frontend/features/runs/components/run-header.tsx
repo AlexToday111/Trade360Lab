@@ -10,15 +10,17 @@ export function RunHeader({ run }: { run: Run }) {
   return (
     <SurfaceCard contentClassName="p-5">
       <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex w-full justify-center">
+          <Button size="sm">
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            Настройка гиперпараметров
+          </Button>
+        </div>
         <div className="flex w-full flex-wrap items-center justify-center gap-3">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button size="sm" variant="secondary">
               <Copy className="mr-2 h-4 w-4" />
               Клонировать конфиг
-            </Button>
-            <Button size="sm">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Настройка гиперпараметров
             </Button>
             <Button size="sm" variant="secondary">
               <FileText className="mr-2 h-4 w-4" />
