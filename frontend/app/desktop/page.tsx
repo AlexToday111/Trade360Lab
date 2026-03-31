@@ -7,10 +7,13 @@ import {
   Activity,
   Database,
   Download,
+  ExternalLink,
   FolderInput,
   Play,
   Plus,
+  RotateCcw,
   SlidersHorizontal,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,9 +31,13 @@ import { useRuns } from "@/features/runs/store/run-store";
 import { uploadStrategy } from "@/lib/api/strategies";
 import { projects, type Project } from "@/lib/demo-data/projects";
 import { getProjectRuns } from "@/lib/project-runs";
+import { getNextRunId } from "@/lib/run-id";
+import type { Run, RunArtifact, RunMetrics, RunParams } from "@/lib/types";
 
 const DEFAULT_START_BALANCE_USD = 100_000;
 type UploadState = "idle" | "uploading" | "success" | "error";
+const IMPORTED_STRATEGY_TAG = "strategy:imported";
+const INVALID_STRATEGY_TAG = "strategy:invalid";
 
 function parseRunDate(value: string) {
   const parsed = Date.parse(value.replace(" ", "T"));
@@ -69,8 +76,88 @@ function toErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function createDraftRunParams(datasetVersion: string): RunParams {
+  return {
+    fees: "0.0 bps",
+    slippage: "0.0 bps",
+    execution: "Manual",
+    riskPerTrade: "0.0%",
+    maxExposure: "0%",
+    symbols: datasetVersion === "Не выбран" ? [] : ["SPY"],
+    timeframe: "1D",
+    period: "Ожидает запуска",
+  };
+}
+
+function createDraftRunMetrics(): RunMetrics {
+  return {
+    pnl: 0,
+    sharpe: 0,
+    maxDrawdown: 0,
+    trades: 0,
+    winrate: 0,
+    avgTrade: 0,
+    feesImpact: 0,
+  };
+}
+
+function createCompletedMetrics(strategyName: string): RunMetrics {
+  const seed = strategyName
+    .split("")
+    .reduce((total, char) => total + char.charCodeAt(0), 0);
+
+  return {
+    pnl: 8 + (seed % 11),
+    sharpe: 1 + (seed % 7) / 10,
+    maxDrawdown: -(4 + (seed % 6)),
+    trades: 120 + (seed % 180),
+    winrate: 48 + (seed % 12),
+    avgTrade: 0.08 + (seed % 5) / 100,
+    feesImpact: -(0.8 + (seed % 5) / 10),
+  };
+}
+
+function createCompletedArtifacts(): RunArtifact[] {
+  return [
+    { id: `log_${Date.now()}`, label: "Лог выполнения", type: "log", size: "420 KB" },
+    { id: `rep_${Date.now()}`, label: "Отчет запуска", type: "report", size: "180 KB" },
+  ];
+}
+
+function isImportedStrategyRun(run: Run) {
+  return run.tags.includes(IMPORTED_STRATEGY_TAG);
+}
+
+function isInvalidStrategyRun(run: Run) {
+  return run.tags.includes(INVALID_STRATEGY_TAG) || run.status === "failed";
+}
+
+function getDesktopStatusPresentation(run: Run) {
+  if (isImportedStrategyRun(run) && run.status === "queued") {
+    return {
+      label: "Готов к запуску",
+      className: "border border-status-warning/35 bg-status-warning/15 text-status-warning",
+      action: "launch" as const,
+    };
+  }
+
+  if (isInvalidStrategyRun(run)) {
+    return {
+      label: "Ошибка",
+      className: "border border-status-failed/35 bg-status-failed/15 text-status-failed",
+      action: "restart" as const,
+    };
+  }
+
+  return {
+    label: "Выполнен",
+    className: "border border-status-success/35 bg-status-success/15 text-status-success",
+    action: "restart" as const,
+  };
+}
+
 export default function DesktopPage() {
-  const { runs } = useRuns();
+  const { runs, addRun, updateRun, deleteRun } = useRuns();
   const searchParams = useSearchParams();
   const requestedProjectId = searchParams.get("project");
   const strategyFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -129,7 +216,10 @@ export default function DesktopPage() {
   }, [project, runs]);
 
   const recentProjectRuns = projectRuns.slice(0, 5);
-  const primaryRun = projectRuns[0] ?? null;
+  const primaryRun =
+    projectRuns.find((run) => !isImportedStrategyRun(run) || run.status !== "queued") ??
+    projectRuns[0] ??
+    null;
 
   const isProjectProfitable = primaryRun ? primaryRun.metrics.pnl > 0 : false;
   const desktopSurfaceToneClassName = isProjectProfitable
@@ -175,6 +265,24 @@ export default function DesktopPage() {
   const canCreateProject = newProjectName.trim().length > 0;
   const canAddStrategy = newStrategyName.trim().length > 0;
 
+  const touchProject = (updates: Partial<Project> = {}) => {
+    if (!project) {
+      return;
+    }
+
+    setProjectOptions((current) =>
+      current.map((item) =>
+        item.id === project.id
+          ? {
+              ...item,
+              lastActive: formatNowAsProjectTimestamp(),
+              ...updates,
+            }
+          : item
+      )
+    );
+  };
+
   const handleCreateProject = () => {
     if (!canCreateProject) {
       return;
@@ -210,6 +318,33 @@ export default function DesktopPage() {
     setNewStrategyName("");
   };
 
+  const handleRunAction = (run: Run) => {
+    const executedAt = formatNowAsProjectTimestamp();
+
+    updateRun(run.id, {
+      status: "done",
+      createdAt: executedAt,
+      period: "2019-01-01 -> 2024-12-31",
+      params: {
+        ...run.params,
+        period: "2019-01-01 -> 2024-12-31",
+      },
+      metrics: createCompletedMetrics(run.strategy),
+      artifacts: createCompletedArtifacts(),
+      tags: run.tags.filter((tag) => tag !== INVALID_STRATEGY_TAG),
+    });
+
+    touchProject({
+      lastRunId: run.id,
+      lastDataset: run.datasetVersion,
+    });
+  };
+
+  const handleDeleteRun = (runId: string) => {
+    deleteRun(runId);
+    touchProject();
+  };
+
   const handleStrategyFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     event.target.value = "";
@@ -228,7 +363,42 @@ export default function DesktopPage() {
     setUploadError(null);
 
     try {
-      await uploadStrategy(selectedFile);
+      const uploadedStrategy = await uploadStrategy(selectedFile);
+      const timestamp = formatNowAsProjectTimestamp();
+      const runId = getNextRunId(runs.map((run) => run.id));
+      const strategyName = uploadedStrategy.filename || selectedFile.name;
+      const initialStatus = uploadedStrategy.status === "VALID" ? "queued" : "failed";
+      const datasetVersion = project?.lastDataset ?? "Не выбран";
+      const importedRun: Run = {
+        id: runId,
+        strategy: strategyName,
+        datasetVersion,
+        period: initialStatus === "queued" ? "Ожидает запуска" : "Импорт завершился с ошибкой",
+        timeframe: "1D",
+        params: createDraftRunParams(datasetVersion),
+        metrics: createDraftRunMetrics(),
+        status: initialStatus,
+        artifacts: [],
+        createdAt: timestamp,
+        commit: "local-import",
+        config: `strategy: ${strategyName}\nsource: upload\n`,
+        tags: [
+          `project:${project?.id ?? "unknown"}`,
+          IMPORTED_STRATEGY_TAG,
+          ...(uploadedStrategy.status === "VALID" ? [] : [INVALID_STRATEGY_TAG]),
+        ],
+        diff: {
+          code: true,
+          data: false,
+          config: false,
+        },
+      };
+
+      addRun(importedRun);
+      touchProject({
+        lastRunId: runId,
+        lastDataset: datasetVersion,
+      });
       setUploadState("success");
     } catch (error) {
       setUploadState("error");
@@ -376,7 +546,7 @@ export default function DesktopPage() {
         actions={
           <>
             <Select value={project.id} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="h-8 w-[240px] justify-center rounded-full border border-white/10 bg-[linear-gradient(145deg,rgba(43,213,118,0.12),rgba(111,247,163,0.08))] px-3 text-xs font-medium text-secondary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-[rgba(92,240,158,0.24)] hover:shadow-[0_0_20px_rgba(43,213,118,0.14)] focus:ring-ring/70 focus:ring-offset-2 [&>span]:w-full [&>span]:text-center [&>svg]:hidden">
+              <SelectTrigger className="h-8 w-[240px] justify-center rounded-full border border-white/15 bg-[linear-gradient(135deg,#2BD576_0%,#6FF7A3_100%)] px-3 text-xs font-medium text-[#07110b] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_14px_30px_rgba(43,213,118,0.24)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_0_26px_rgba(43,213,118,0.28)] focus:ring-ring/70 focus:ring-offset-2 [&>span]:w-full [&>span]:text-center [&>svg]:hidden">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -398,10 +568,6 @@ export default function DesktopPage() {
             >
               <Plus className="mr-2 h-4 w-4" />
               Добавить стратегию
-            </Button>
-            <Button size="sm">
-              <Play className="mr-2 h-4 w-4" />
-              Запустить сценарий
             </Button>
           </>
         }
@@ -512,7 +678,7 @@ export default function DesktopPage() {
 
       <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#0F141E]">
         <div className="overflow-x-auto">
-          <table className="min-w-[700px] w-full text-xs">
+          <table className="min-w-[860px] w-full text-xs">
             <thead className="bg-[linear-gradient(135deg,hsl(var(--tl-glow)/0.22),hsl(var(--tl-glow-soft)/0.16))] text-foreground/90">
               <tr className="border-b border-white/10">
                 <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.14em]">
@@ -527,8 +693,11 @@ export default function DesktopPage() {
                 <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.14em]">
                   Баланс до/после
                 </th>
+                <th className="px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.14em]">
+                  Статус
+                </th>
                 <th className="px-4 py-3 text-right text-[11px] font-medium uppercase tracking-[0.14em]">
-                  Посмотреть всё
+                  Действия
                 </th>
               </tr>
             </thead>
@@ -536,7 +705,7 @@ export default function DesktopPage() {
               {recentProjectRuns.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-5 text-center text-xs text-muted-foreground"
                   >
                     Для этого проекта пока нет запусков.
@@ -548,6 +717,7 @@ export default function DesktopPage() {
                   const balanceBefore = DEFAULT_START_BALANCE_USD;
                   const balanceAfter =
                     DEFAULT_START_BALANCE_USD * (1 + run.metrics.pnl / 100);
+                  const statusPresentation = getDesktopStatusPresentation(run);
 
                   return (
                     <tr key={run.id} className="border-b border-white/10 last:border-b-0">
@@ -578,15 +748,62 @@ export default function DesktopPage() {
                         {formatUsdAmount(balanceBefore)} {"\u2192"}{" "}
                         {formatUsdAmount(balanceAfter)}
                       </td>
-                      <td className="px-4 py-3 align-middle text-right">
-                        <Button
-                          asChild
-                          size="sm"
-                          variant="secondary"
-                          className="h-7 rounded-full px-3"
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${statusPresentation.className}`}
                         >
-                          <Link href={`/runs/${run.id}`}>Открыть</Link>
-                        </Button>
+                          {statusPresentation.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-middle text-right">
+                        <div className="flex justify-end gap-2">
+                          {statusPresentation.action === "launch" ? (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="secondary"
+                              className="h-8 w-8 rounded-full"
+                              onClick={() => handleRunAction(run)}
+                              title="Запустить"
+                              aria-label="Запустить"
+                            >
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="secondary"
+                              className="h-8 w-8 rounded-full"
+                              onClick={() => handleRunAction(run)}
+                              title="Рестарт"
+                              aria-label="Рестарт"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="secondary"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => handleDeleteRun(run.id)}
+                            title="Удалить"
+                            aria-label="Удалить"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            asChild
+                            size="icon"
+                            variant="secondary"
+                            className="h-8 w-8 rounded-full"
+                          >
+                            <Link href={`/runs/${run.id}`} aria-label="Открыть" title="Открыть">
+                              <ExternalLink className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
