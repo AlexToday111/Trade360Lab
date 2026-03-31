@@ -1,37 +1,20 @@
 "use client";
 
 import { Run } from "@/lib/types";
-import { RunDiffIndicators, RunStatusBadge } from "@/features/runs/components/run-badges";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Download, GitCompare, Copy, Repeat2, FileText, Upload } from "lucide-react";
+import { Download, Copy, FileText, Upload } from "lucide-react";
 import { SurfaceCard } from "@/components/shared/surface-card";
 
 export function RunHeader({ run }: { run: Run }) {
   return (
     <SurfaceCard contentClassName="p-5">
       <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div>
-            <div className="text-xs text-muted-foreground">ID запуска</div>
-            <div className="font-mono text-sm text-foreground">{run.id}</div>
-          </div>
-          <RunStatusBadge status={run.status} />
-          <RunDiffIndicators diff={run.diff} />
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="secondary">
-            <Repeat2 className="mr-2 h-4 w-4" />
-            Повторить запуск
-          </Button>
           <Button size="sm" variant="secondary">
             <Copy className="mr-2 h-4 w-4" />
             Клонировать конфиг
-          </Button>
-          <Button size="sm" variant="secondary">
-            <GitCompare className="mr-2 h-4 w-4" />
-            Diff с...
           </Button>
           <Button size="sm" variant="secondary">
             <FileText className="mr-2 h-4 w-4" />
