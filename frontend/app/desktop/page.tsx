@@ -376,7 +376,7 @@ export default function DesktopPage() {
         actions={
           <>
             <Select value={project.id} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="h-9 w-[240px] justify-center border-white/15 bg-[#0F141E] text-xs [&>span]:w-full [&>span]:text-center [&>svg]:hidden">
+              <SelectTrigger className="h-8 w-[240px] justify-center rounded-full border border-white/10 bg-[linear-gradient(145deg,rgba(43,213,118,0.12),rgba(111,247,163,0.08))] px-3 text-xs font-medium text-secondary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-[rgba(92,240,158,0.24)] hover:shadow-[0_0_20px_rgba(43,213,118,0.14)] focus:ring-ring/70 focus:ring-offset-2 [&>span]:w-full [&>span]:text-center [&>svg]:hidden">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -387,9 +387,8 @@ export default function DesktopPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button size="sm">
-              <Play className="mr-2 h-4 w-4" />
-              Запустить сценарий
+            <Button asChild size="sm" variant="secondary">
+              <Link href={`/backtests?project=${project.id}`}>Все бэктесты проекта</Link>
             </Button>
             <Button
               size="sm"
@@ -400,8 +399,9 @@ export default function DesktopPage() {
               <Plus className="mr-2 h-4 w-4" />
               Добавить стратегию
             </Button>
-            <Button asChild size="sm" variant="secondary">
-              <Link href={`/backtests?project=${project.id}`}>Все бэктесты проекта</Link>
+            <Button size="sm">
+              <Play className="mr-2 h-4 w-4" />
+              Запустить сценарий
             </Button>
           </>
         }
