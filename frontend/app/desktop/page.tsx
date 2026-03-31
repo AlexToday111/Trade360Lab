@@ -592,7 +592,7 @@ export default function DesktopPage() {
               </div>
             ) : null}
           </div>
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.68fr)]">
             <div className="grid gap-3">
               <div className="group relative overflow-hidden rounded-[22px] border border-white/15 bg-[linear-gradient(145deg,rgba(34,39,51,0.96),rgba(16,20,30,0.94))] p-4 shadow-[0_14px_36px_rgba(0,0,0,0.34)]">
                 <div
