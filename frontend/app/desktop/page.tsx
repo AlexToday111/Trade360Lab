@@ -430,16 +430,7 @@ export default function DesktopPage() {
                 return (
                   <div
                     key={item.project.id}
-                    role="button"
-                    tabIndex={0}
                     className="group rounded-[20px] border border-white/12 bg-[linear-gradient(155deg,rgba(20,27,38,0.95),rgba(9,13,21,0.95))] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_16px_32px_rgba(0,0,0,0.36)]"
-                    onClick={() => setSelectedProjectId(item.project.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedProjectId(item.project.id);
-                      }
-                    }}
                   >
                     <div className="text-base font-semibold text-foreground">
                       {item.project.name}
@@ -478,9 +469,15 @@ export default function DesktopPage() {
                             : `${item.averagePnl >= 0 ? "+" : ""}${item.averagePnl.toFixed(1)}%`}
                         </span>
                       </div>
-                      <div className="rounded-full border border-white/12 px-2.5 py-1 text-[11px] text-foreground/90">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 rounded-full px-3 text-[11px]"
+                        onClick={() => setSelectedProjectId(item.project.id)}
+                      >
                         Открыть
-                      </div>
+                      </Button>
                     </div>
                   </div>
                 );
