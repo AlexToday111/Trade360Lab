@@ -28,7 +28,6 @@ import {
   previewRows,
   type DatasetVersion,
 } from "@/lib/demo-data/datasets";
-import { getDataSourceTypeLabel } from "@/lib/ui-text";
 import { cn } from "@/lib/utils";
 
 type DatasetSource = "bybit" | "local";
@@ -1563,9 +1562,6 @@ export default function DataPage() {
             </div>
             <div className="min-w-0">
               <div className="truncate text-sm font-medium text-foreground">{source.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {getDataSourceTypeLabel(source.type)}
-              </div>
             </div>
           </SurfaceCard>
         ))}
