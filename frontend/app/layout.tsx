@@ -12,7 +12,7 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "T360Lab",
+  title: "Trade360Lab",
   description: "Интерфейс исследования, запуска и сравнения торговых сценариев.",
   icons: {
     icon: "/favicon.ico",
