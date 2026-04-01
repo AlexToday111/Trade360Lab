@@ -2119,7 +2119,7 @@ export default function DataPage() {
           subtitle={
             selectedDataset
               ? "Метаданные и первые строки выбранного датасета."
-              : "Сначала выберите датасет слева."
+              : undefined
           }
         >
           {selectedDataset ? (
