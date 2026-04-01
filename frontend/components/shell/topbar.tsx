@@ -55,7 +55,7 @@ export function Topbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "group flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[13px] font-medium text-white/66 transition-all duration-200",
+                  "group flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[14px] font-semibold text-white/66 transition-all duration-200",
                   isActive
                     ? "border-[#c7ee51]/40 bg-[#c7ee51]/14 text-[#c7ee51] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     : "border-transparent bg-transparent hover:border-white/[0.04] hover:bg-white/[0.03] hover:text-white/88"
