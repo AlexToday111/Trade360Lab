@@ -33,6 +33,7 @@ export const dataSources: DataSource[] = [
     status: "idle",
     iconSrc: "/icon-folder.png",
   },
+  { id: "src-5", name: "FOREX", type: "Exchange", status: "connected" },
 ];
 
 export const datasetVersions: DatasetVersion[] = [
