@@ -1547,18 +1547,18 @@ export default function DataPage() {
             className="py-0"
             contentClassName="flex items-center gap-3 p-3.5"
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-border bg-panel-subtle">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center">
               {source.iconSrc ? (
                 <Image
                   src={source.iconSrc}
                   alt=""
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain"
+                  width={34}
+                  height={34}
+                  className="h-[34px] w-[34px] object-contain"
                   aria-hidden="true"
                 />
               ) : (
-                <Database className="h-4 w-4 text-muted-foreground" />
+                <Database className="h-5 w-5 text-muted-foreground" />
               )}
             </div>
             <div className="min-w-0">
