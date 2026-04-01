@@ -24,8 +24,20 @@ export const dataSources: DataSource[] = [
     status: "connected",
     iconSrc: "/icon-binance-coin.png",
   },
-  { id: "src-2", name: "Moex", type: "Exchange", status: "connected" },
-  { id: "src-3", name: "ByBit", type: "Exchange", status: "connected" },
+  {
+    id: "src-2",
+    name: "Moex",
+    type: "Exchange",
+    status: "connected",
+    iconSrc: "/MOEX.png",
+  },
+  {
+    id: "src-3",
+    name: "ByBit",
+    type: "Exchange",
+    status: "connected",
+    iconSrc: "/ByBit.png",
+  },
   {
     id: "src-4",
     name: "Локальный CSV",
