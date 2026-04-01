@@ -2,13 +2,12 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type InterfaceTheme = "neon" | "graphite" | "amber";
+export type InterfaceTheme = "black";
 
 type ThemeOption = {
-  value: InterfaceTheme;
+  value: InterfaceTheme | "white";
   label: string;
-  description: string;
-  accentLabel: string;
+  disabled?: boolean;
 };
 
 type ThemeContextValue = {
@@ -20,33 +19,24 @@ const STORAGE_KEY = "t360lab.interface-theme";
 
 export const interfaceThemeOptions: ThemeOption[] = [
   {
-    value: "neon",
-    label: "Neon Grid",
-    description: "Базовая зелёная тема интерфейса.",
-    accentLabel: "Lime",
+    value: "black",
+    label: "Black",
   },
   {
-    value: "graphite",
-    label: "Graphite Blue",
-    description: "Более холодная тёмная палитра с синим свечением.",
-    accentLabel: "Blue",
-  },
-  {
-    value: "amber",
-    label: "Amber Signal",
-    description: "Тёплая ночная тема с янтарными акцентами.",
-    accentLabel: "Amber",
+    value: "white",
+    label: "White",
+    disabled: true,
   },
 ];
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function isInterfaceTheme(value: string | null): value is InterfaceTheme {
-  return interfaceThemeOptions.some((option) => option.value === value);
+  return value === "black";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<InterfaceTheme>("neon");
+  const [theme, setTheme] = useState<InterfaceTheme>("black");
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem(STORAGE_KEY);
@@ -57,7 +47,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.theme = "neon";
     window.localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 

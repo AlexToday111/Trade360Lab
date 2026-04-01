@@ -4,14 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Github, Settings2 } from "lucide-react";
-import { interfaceThemeOptions, type InterfaceTheme, useTheme } from "@/components/theme/theme-provider";
+import { interfaceThemeOptions, useTheme } from "@/components/theme/theme-provider";
 import { navItems } from "@/components/shell/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -143,30 +142,36 @@ export function Topbar() {
               <div className="px-3 pb-2 pt-1 text-[11px] uppercase tracking-[0.22em] text-white/38">
                 Тема интерфейса
               </div>
-              <DropdownMenuRadioGroup
-                value={theme}
-                onValueChange={(value) => setTheme(value as InterfaceTheme)}
-              >
-                {interfaceThemeOptions.map((option) => (
-                  <DropdownMenuRadioItem
-                    key={option.value}
-                    value={option.value}
-                    className="cursor-pointer rounded-[12px] py-2.5 pl-8 pr-3 focus:bg-white/[0.05]"
-                  >
-                    <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-white/90">{option.label}</div>
-                        <div className="text-[11px] leading-5 text-white/48">
-                          {option.description}
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-[10px] uppercase tracking-[0.22em] text-white/34">
-                        {option.accentLabel}
-                      </span>
-                    </div>
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
+              <div className="space-y-1 px-1 pb-1">
+                {interfaceThemeOptions.map((option) => {
+                  const isSelected = option.value === theme;
+
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      disabled={option.disabled}
+                      onSelect={(event) => {
+                        if (option.disabled) {
+                          event.preventDefault();
+                          return;
+                        }
+
+                        setTheme("black");
+                      }}
+                      className={cn(
+                        "rounded-[12px] px-3 py-2.5 text-sm font-medium focus:bg-white/[0.05]",
+                        option.disabled
+                          ? "cursor-default text-white/28"
+                          : "cursor-pointer text-white/78",
+                        isSelected &&
+                          "bg-[#c9ef4e]/12 text-[#C9EF4E] focus:bg-[#c9ef4e]/12 focus:text-[#C9EF4E]"
+                      )}
+                    >
+                      <span>{option.label}</span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
           {isSettingsActive ? (
