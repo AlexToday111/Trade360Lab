@@ -38,8 +38,7 @@ export function RunsTable({
           const isSelected = selectedIds.includes(run.id);
           const selectedCellStyle = isSelected
             ? {
-                background:
-                  "linear-gradient(135deg, rgba(43, 213, 118, 0.32), rgba(111, 247, 163, 0.18))",
+                backgroundColor: "rgba(43, 213, 118, 0.18)",
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
               }
             : undefined;

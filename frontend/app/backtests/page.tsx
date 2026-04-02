@@ -148,11 +148,11 @@ function BacktestsPageContent() {
               variant="destructive"
               onClick={handleBulkDelete}
               disabled={selectedVisibleCount === 0}
-              className="text-black"
+              style={{ color: "#000000" }}
               aria-label="Удалить выбранные"
               title="Удалить выбранные"
             >
-              <Trash2 className="h-4 w-4 text-black" />
+              <Trash2 className="h-4 w-4" style={{ color: "#000000" }} />
             </Button>
           </>
         }
