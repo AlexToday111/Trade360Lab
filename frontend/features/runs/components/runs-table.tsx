@@ -43,7 +43,7 @@ export function RunsTable({
               className={cn(
                 "cursor-pointer hover:bg-panel-subtle",
                 isSelected &&
-                  "bg-[linear-gradient(135deg,rgba(43,213,118,0.20),rgba(111,247,163,0.10))]"
+                  "bg-[linear-gradient(135deg,rgba(43,213,118,0.32),rgba(111,247,163,0.18))] shadow-[inset_0_0_0_1px_rgba(43,213,118,0.22)]"
               )}
               onClick={() => onToggle(run.id)}
             >
