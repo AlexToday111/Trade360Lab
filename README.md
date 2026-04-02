@@ -150,6 +150,7 @@ mvn spring-boot:run
 - Java API: [`backend/java/README.md`](./backend/java/README.md)
 - Python parser: [`backend/python/README.md`](./backend/python/README.md)
 
+--- 
 <p align="center">
   <img src="./frontend/public/png2.jpg" alt="TradeLab Logo" />
 </p>
