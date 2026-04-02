@@ -12,13 +12,11 @@ export function RunsTable({
   runs,
   selectedIds,
   onToggle,
-  onRowClick,
   onDelete,
 }: {
   runs: Run[];
   selectedIds: string[];
   onToggle: (id: string) => void;
-  onRowClick: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -42,8 +40,7 @@ export function RunsTable({
         {runs.map((run) => (
           <TableRow
             key={run.id}
-            className="cursor-pointer hover:bg-panel-subtle"
-            onClick={() => onRowClick(run.id)}
+            className="hover:bg-panel-subtle"
           >
             <TableCell onClick={(event) => event.stopPropagation()}>
               <Checkbox

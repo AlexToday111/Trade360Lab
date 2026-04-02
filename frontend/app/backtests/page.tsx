@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Download, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,6 @@ function parseRunDate(value: string) {
 }
 
 function BacktestsPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { runs, createRemoteRun, deleteRun } = useRuns();
 
@@ -279,7 +278,6 @@ function BacktestsPageContent() {
             runs={filteredRuns}
             selectedIds={selected}
             onToggle={toggleRun}
-            onRowClick={(id) => router.push(`/runs/${id}`)}
             onDelete={handleDeleteRun}
           />
         ) : (
