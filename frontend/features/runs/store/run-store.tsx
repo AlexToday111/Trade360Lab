@@ -1,72 +1,235 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Run } from "@/lib/types";
-import { initialRuns } from "@/lib/demo-data/runs";
+import { createRun, fetchRuns, type CreateRunPayload } from "@/lib/api/runs";
+import { fetchStrategies } from "@/lib/api/strategies";
+import type { Run, Strategy } from "@/lib/types";
 
 type RunStore = {
   runs: Run[];
+  isLoading: boolean;
   addRun: (run: Run) => void;
+  createRemoteRun: (
+    payload: CreateRunPayload,
+    options?: { replaceRunId?: string; preserveFields?: Partial<Run> }
+  ) => Promise<Run>;
   updateRun: (id: string, update: Partial<Run>) => void;
   deleteRun: (id: string) => void;
   getRunById: (id: string) => Run | undefined;
+  reloadRuns: () => Promise<void>;
 };
 
 const RunStoreContext = createContext<RunStore | null>(null);
 const STORAGE_KEY = "tradelab:runs";
-const READABLE_RUN_ID_PATTERN = /^run_\d+$/;
 
-function normalizeRunIds(runs: Run[]) {
-  if (runs.every((run) => READABLE_RUN_ID_PATTERN.test(run.id))) {
-    return runs;
+function sortRuns(items: Run[]) {
+  return [...items].sort((left, right) => {
+    const leftTime = Date.parse(left.createdAt);
+    const rightTime = Date.parse(right.createdAt);
+    return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+  });
+}
+
+function readStoredRuns() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) {
+    return [];
   }
 
-  return runs.map((run, index) => ({
-    ...run,
-    id: `run_${index + 1}`,
-  }));
+  try {
+    const parsed = JSON.parse(stored) as Run[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildStrategiesMap(strategies: Strategy[]) {
+  return new Map(
+    strategies
+      .filter((strategy) => typeof strategy.id === "number")
+      .map((strategy) => [strategy.id as number, strategy] as const)
+  );
+}
+
+function mergeBackendRunWithLocalState(backendRun: Run, localRun?: Run) {
+  if (!localRun) {
+    return backendRun;
+  }
+
+  return {
+    ...backendRun,
+    strategy: localRun.strategy || backendRun.strategy,
+    tags: localRun.tags.length > 0 ? localRun.tags : backendRun.tags,
+    artifacts: localRun.artifacts.length > 0 ? localRun.artifacts : backendRun.artifacts,
+    strategyParams: localRun.strategyParams ?? backendRun.strategyParams,
+    commit: localRun.commit || backendRun.commit,
+    config: localRun.config || backendRun.config,
+    diff: localRun.diff ?? backendRun.diff,
+    datasetVersion: localRun.datasetVersion || backendRun.datasetVersion,
+  };
+}
+
+function mergeRuns(localRuns: Run[], backendRuns: Run[]) {
+  const backendIds = new Set(backendRuns.map((run) => run.backendRunId));
+  const localByBackendId = new Map(
+    localRuns
+      .filter((run) => typeof run.backendRunId === "number")
+      .map((run) => [run.backendRunId as number, run] as const)
+  );
+
+  const mergedBackendRuns = backendRuns.map((run) =>
+    mergeBackendRunWithLocalState(run, localByBackendId.get(run.backendRunId as number))
+  );
+
+  const draftRuns = localRuns.filter((run) => run.backendRunId === undefined || !backendIds.has(run.backendRunId));
+  return sortRuns([...draftRuns, ...mergedBackendRuns]);
+}
+
+async function loadRunsFromSources(localRuns: Run[]) {
+  const strategies = await fetchStrategies();
+  const nextStrategiesById = buildStrategiesMap(strategies);
+  const backendRuns = await fetchRuns(nextStrategiesById);
+
+  return {
+    strategiesById: nextStrategiesById,
+    runs: mergeRuns(localRuns, backendRuns),
+  };
 }
 
 export function RunStoreProvider({ children }: { children: React.ReactNode }) {
-  const [runs, setRuns] = useState<Run[]>(initialRuns);
-  const [hydrated, setHydrated] = useState(false);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [strategiesById, setStrategiesById] = useState<Map<number, Strategy>>(new Map());
+
+  const reloadRuns = async () => {
+    setIsLoading(true);
+
+    const localRuns = readStoredRuns();
+
+    try {
+      const loaded = await loadRunsFromSources(localRuns);
+      setStrategiesById(loaded.strategiesById);
+      setRuns(loaded.runs);
+    } catch {
+      setRuns(sortRuns(localRuns));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    let cancelled = false;
+
+    async function loadInitialRuns() {
+      setIsLoading(true);
+
+      const localRuns = readStoredRuns();
+
       try {
-        const parsedRuns = JSON.parse(stored) as Run[];
-        setRuns(normalizeRunIds(parsedRuns));
+        const loaded = await loadRunsFromSources(localRuns);
+        if (cancelled) {
+          return;
+        }
+
+        setStrategiesById(loaded.strategiesById);
+        setRuns(loaded.runs);
       } catch {
-        setRuns(initialRuns);
+        if (!cancelled) {
+          setRuns(sortRuns(localRuns));
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
-    setHydrated(true);
+
+    void loadInitialRuns();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (isLoading) {
+      return;
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(runs));
-  }, [hydrated, runs]);
+  }, [isLoading, runs]);
 
   const addRun = (run: Run) => {
-    setRuns((prev) => [run, ...prev]);
+    setRuns((current) => sortRuns([run, ...current]));
+  };
+
+  const createRemoteRun = async (
+    payload: CreateRunPayload,
+    options?: { replaceRunId?: string; preserveFields?: Partial<Run> }
+  ) => {
+    const remoteRun = await createRun(payload, strategiesById);
+
+    setRuns((current) => {
+      const existingRun = options?.replaceRunId
+        ? current.find((run) => run.id === options.replaceRunId)
+        : undefined;
+
+      const mergedRemoteRun = {
+        ...remoteRun,
+        ...options?.preserveFields,
+        tags:
+          options?.preserveFields?.tags ??
+          existingRun?.tags ??
+          remoteRun.tags,
+        artifacts:
+          options?.preserveFields?.artifacts ??
+          existingRun?.artifacts ??
+          remoteRun.artifacts,
+        config:
+          options?.preserveFields?.config ??
+          existingRun?.config ??
+          remoteRun.config,
+        commit:
+          options?.preserveFields?.commit ??
+          existingRun?.commit ??
+          remoteRun.commit,
+        diff:
+          options?.preserveFields?.diff ??
+          existingRun?.diff ??
+          remoteRun.diff,
+        datasetVersion:
+          options?.preserveFields?.datasetVersion ??
+          existingRun?.datasetVersion ??
+          remoteRun.datasetVersion,
+      };
+
+      const nextRuns = options?.replaceRunId
+        ? current.filter((run) => run.id !== options.replaceRunId)
+        : current.filter((run) => run.id !== remoteRun.id);
+
+      return sortRuns([mergedRemoteRun, ...nextRuns]);
+    });
+
+    return remoteRun;
   };
 
   const updateRun = (id: string, update: Partial<Run>) => {
-    setRuns((prev) =>
-      prev.map((run) => (run.id === id ? { ...run, ...update } : run))
+    setRuns((current) =>
+      current.map((run) => (run.id === id ? { ...run, ...update } : run))
     );
   };
 
   const deleteRun = (id: string) => {
-    setRuns((prev) => prev.filter((run) => run.id !== id));
+    setRuns((current) => current.filter((run) => run.id !== id));
   };
 
   const getRunById = (id: string) => runs.find((run) => run.id === id);
 
   return (
-    <RunStoreContext.Provider value={{ runs, addRun, updateRun, deleteRun, getRunById }}>
+    <RunStoreContext.Provider
+      value={{ runs, isLoading, addRun, createRemoteRun, updateRun, deleteRun, getRunById, reloadRuns }}
+    >
       {children}
     </RunStoreContext.Provider>
   );

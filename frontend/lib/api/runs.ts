@@ -1,0 +1,307 @@
+import type { Run, RunMetrics, RunParams, RunStatus, Strategy } from "@/lib/types";
+
+type BackendRunResponse = {
+  id: number;
+  strategyId: number;
+  status: string;
+  exchange: string;
+  symbol: string;
+  interval: string;
+  from: string;
+  to: string;
+  params?: Record<string, unknown> | null;
+  metrics?: Record<string, unknown> | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  finishedAt?: string | null;
+};
+
+export type CreateRunPayload = {
+  strategyId: number;
+  exchange: string;
+  symbol: string;
+  interval: string;
+  from: string;
+  to: string;
+  params: Record<string, unknown>;
+};
+
+async function readErrorMessage(response: Response) {
+  try {
+    const payload = (await response.json()) as { message?: string };
+    if (typeof payload.message === "string" && payload.message.trim().length > 0) {
+      return payload.message;
+    }
+  } catch {
+    // Ignore JSON parsing issues and fallback to text/status below.
+  }
+
+  try {
+    const text = await response.text();
+    if (text.trim().length > 0) {
+      return text;
+    }
+  } catch {
+    // Ignore text parsing issues and fallback to status below.
+  }
+
+  return `Request failed with status ${response.status}`;
+}
+
+function toNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function toPercent(value: unknown, options?: { negative?: boolean }) {
+  const numberValue = toNumber(value);
+  if (numberValue === null) {
+    return 0;
+  }
+
+  const normalized = Math.abs(numberValue) <= 1 ? numberValue * 100 : numberValue;
+  return options?.negative ? -Math.abs(normalized) : normalized;
+}
+
+function getMetric(metrics: Record<string, unknown> | null | undefined, keys: string[]) {
+  if (!metrics) {
+    return null;
+  }
+
+  for (const key of keys) {
+    if (key in metrics) {
+      return metrics[key];
+    }
+  }
+
+  return null;
+}
+
+function toFrontendStatus(status: string): RunStatus {
+  switch (status.toUpperCase()) {
+    case "PENDING":
+      return "queued";
+    case "RUNNING":
+      return "running";
+    case "COMPLETED":
+      return "done";
+    case "FAILED":
+      return "failed";
+    default:
+      return "failed";
+  }
+}
+
+function toFrontendMetrics(metrics: Record<string, unknown> | null | undefined): RunMetrics {
+  return {
+    pnl: toPercent(getMetric(metrics, ["pnl", "profit", "total_return", "return", "totalReturn"])),
+    sharpe: toNumber(getMetric(metrics, ["sharpe", "sharpe_ratio", "sharpeRatio"])) ?? 0,
+    maxDrawdown: toPercent(
+      getMetric(metrics, ["maxDrawdown", "max_drawdown", "drawdown", "maxDrawdownPct"]),
+      { negative: true }
+    ),
+    trades: Math.round(
+      toNumber(getMetric(metrics, ["trades", "trade_count", "tradeCount", "total_trades"])) ?? 0
+    ),
+    winrate: toPercent(getMetric(metrics, ["winrate", "win_rate", "winRate"])),
+    avgTrade: toPercent(
+      getMetric(metrics, ["avgTrade", "avg_trade", "average_trade", "avg_trade_return"])
+    ),
+    feesImpact: toPercent(
+      getMetric(metrics, ["feesImpact", "fees_impact", "commission", "commission_impact"]),
+      { negative: true }
+    ),
+  };
+}
+
+function toRunParams(interval: string, from: string, to: string): RunParams {
+  return {
+    fees: "Backend managed",
+    slippage: "Backend managed",
+    execution: "Python service",
+    riskPerTrade: "Backend managed",
+    maxExposure: "Backend managed",
+    symbols: [],
+    timeframe: interval,
+    period: `${from} -> ${to}`,
+  };
+}
+
+function toDisplayStrategyName(
+  run: BackendRunResponse,
+  strategiesById?: Map<number, Strategy>
+) {
+  const strategy = strategiesById?.get(run.strategyId);
+  if (!strategy) {
+    return `strategy_${run.strategyId}.py`;
+  }
+
+  return strategy.name?.trim() || strategy.fileName;
+}
+
+function normalizeBackendRun(payload: unknown): BackendRunResponse | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+  if (
+    typeof candidate.id !== "number" ||
+    typeof candidate.strategyId !== "number" ||
+    typeof candidate.status !== "string" ||
+    typeof candidate.exchange !== "string" ||
+    typeof candidate.symbol !== "string" ||
+    typeof candidate.interval !== "string" ||
+    typeof candidate.from !== "string" ||
+    typeof candidate.to !== "string" ||
+    typeof candidate.createdAt !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: candidate.id,
+    strategyId: candidate.strategyId,
+    status: candidate.status,
+    exchange: candidate.exchange,
+    symbol: candidate.symbol,
+    interval: candidate.interval,
+    from: candidate.from,
+    to: candidate.to,
+    params:
+      candidate.params && typeof candidate.params === "object"
+        ? (candidate.params as Record<string, unknown>)
+        : null,
+    metrics:
+      candidate.metrics && typeof candidate.metrics === "object"
+        ? (candidate.metrics as Record<string, unknown>)
+        : null,
+    errorMessage: typeof candidate.errorMessage === "string" ? candidate.errorMessage : null,
+    createdAt: candidate.createdAt,
+    finishedAt: typeof candidate.finishedAt === "string" ? candidate.finishedAt : null,
+  };
+}
+
+export function toFrontendRun(
+  backendRun: BackendRunResponse,
+  strategiesById?: Map<number, Strategy>
+): Run {
+  const strategy = strategiesById?.get(backendRun.strategyId);
+  const configPayload = {
+    exchange: backendRun.exchange,
+    symbol: backendRun.symbol,
+    interval: backendRun.interval,
+    from: backendRun.from,
+    to: backendRun.to,
+    params: backendRun.params ?? {},
+  };
+
+  return {
+    id: String(backendRun.id),
+    backendRunId: backendRun.id,
+    strategyId: backendRun.strategyId,
+    strategy: toDisplayStrategyName(backendRun, strategiesById),
+    datasetVersion: `${backendRun.exchange}:${backendRun.symbol}`,
+    period: `${backendRun.from} -> ${backendRun.to}`,
+    timeframe: backendRun.interval,
+    params: toRunParams(backendRun.interval, backendRun.from, backendRun.to),
+    strategyParams: backendRun.params ?? {},
+    metrics: toFrontendMetrics(backendRun.metrics),
+    status: toFrontendStatus(backendRun.status),
+    artifacts: [],
+    createdAt: backendRun.createdAt,
+    finishedAt: backendRun.finishedAt,
+    errorMessage: backendRun.errorMessage ?? null,
+    exchange: backendRun.exchange,
+    symbol: backendRun.symbol,
+    from: backendRun.from,
+    to: backendRun.to,
+    commit: "backend-run",
+    config: JSON.stringify(configPayload, null, 2),
+    tags: strategy?.status === "VALID" ? [] : ["candidate"],
+    diff: {
+      code: false,
+      data: false,
+      config: false,
+    },
+  };
+}
+
+function toRuns(
+  payload: unknown,
+  strategiesById?: Map<number, Strategy>
+) {
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return payload
+    .map((item) => normalizeBackendRun(item))
+    .filter((item): item is BackendRunResponse => item !== null)
+    .map((item) => toFrontendRun(item, strategiesById));
+}
+
+export async function fetchRuns(strategiesById?: Map<number, Strategy>) {
+  const response = await fetch("/api/runs", {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  const payload = (await response.json()) as unknown;
+  return toRuns(payload, strategiesById);
+}
+
+export async function fetchRunById(id: number | string, strategiesById?: Map<number, Strategy>) {
+  const response = await fetch(`/api/runs/${id}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  const payload = (await response.json()) as unknown;
+  const backendRun = normalizeBackendRun(payload);
+  if (!backendRun) {
+    throw new Error("Invalid run response");
+  }
+
+  return toFrontendRun(backendRun, strategiesById);
+}
+
+export async function createRun(payload: CreateRunPayload, strategiesById?: Map<number, Strategy>) {
+  const response = await fetch("/api/runs", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  const body = (await response.json()) as unknown;
+  const backendRun = normalizeBackendRun(body);
+  if (!backendRun) {
+    throw new Error("Invalid run creation response");
+  }
+
+  return toFrontendRun(backendRun, strategiesById);
+}

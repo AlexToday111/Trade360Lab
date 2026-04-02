@@ -30,15 +30,24 @@ export type RunArtifact = {
 
 export type Run = {
   id: string;
+  backendRunId?: number;
+  strategyId?: number;
   strategy: string;
   datasetVersion: string;
   period: string;
   timeframe: string;
   params: RunParams;
+  strategyParams?: Record<string, unknown>;
   metrics: RunMetrics;
   status: RunStatus;
   artifacts: RunArtifact[];
   createdAt: string;
+  finishedAt?: string | null;
+  errorMessage?: string | null;
+  exchange?: string;
+  symbol?: string;
+  from?: string;
+  to?: string;
   commit: string;
   config: string;
   tags: string[];

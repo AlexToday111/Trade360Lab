@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Download, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,43 +12,10 @@ import { RunsTable } from "@/features/runs/components/runs-table";
 import { useRuns } from "@/features/runs/store/run-store";
 import { projects } from "@/lib/demo-data/projects";
 import { getRunProjectId } from "@/lib/project-runs";
-import { getNextRunIds } from "@/lib/run-id";
-import type { Run, RunStatus } from "@/lib/types";
-
-const zeroMetrics = {
-  pnl: 0,
-  sharpe: 0,
-  maxDrawdown: 0,
-  trades: 0,
-  winrate: 0,
-  avgTrade: 0,
-  feesImpact: 0,
-};
-
-function formatNowAsRunDate() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const hh = String(now.getHours()).padStart(2, "0");
-  const min = String(now.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-}
+import type { RunStatus } from "@/lib/types";
 
 function escapeCsv(value: string) {
   return `"${value.replace(/"/g, "\"\"")}"`;
-}
-
-function buildRerun(sourceRun: Run, id: string): Run {
-  return {
-    ...sourceRun,
-    id,
-    status: "queued",
-    createdAt: formatNowAsRunDate(),
-    artifacts: [],
-    metrics: zeroMetrics,
-    tags: Array.from(new Set([...sourceRun.tags, "candidate"])),
-  };
 }
 
 function parseRunDate(value: string) {
@@ -56,10 +23,10 @@ function parseRunDate(value: string) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-export default function BacktestsPage() {
+function BacktestsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { runs, addRun } = useRuns();
+  const { runs, createRemoteRun } = useRuns();
 
   const [selected, setSelected] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,8 +77,6 @@ export default function BacktestsPage() {
   const filteredIds = useMemo(() => filteredRuns.map((run) => run.id), [filteredRuns]);
   const selectedVisibleIds = selected.filter((id) => filteredIds.includes(id));
   const selectedVisibleCount = selectedVisibleIds.length;
-  const allVisibleSelected =
-    filteredIds.length > 0 && filteredIds.every((id) => selected.includes(id));
 
   const statusStats = useMemo(() => {
     return {
@@ -129,21 +94,25 @@ export default function BacktestsPage() {
     );
   };
 
-  const toggleVisibleSelection = () => {
-    if (allVisibleSelected) {
-      setSelected((prev) => prev.filter((id) => !filteredIds.includes(id)));
-      return;
-    }
-    setSelected((prev) => Array.from(new Set([...prev, ...filteredIds])));
-  };
-
-  const handleBulkRerun = () => {
+  const handleBulkRerun = async () => {
     const selectedRuns = runs.filter((run) => selectedVisibleIds.includes(run.id));
-    const nextIds = getNextRunIds(
-      runs.map((run) => run.id),
-      selectedRuns.length
+
+    await Promise.all(
+      selectedRuns
+        .filter((run) => typeof run.strategyId === "number")
+        .map((run) =>
+          createRemoteRun({
+            strategyId: run.strategyId as number,
+            exchange: run.exchange ?? "binance",
+            symbol: run.symbol ?? "BTCUSDT",
+            interval: run.timeframe && run.timeframe !== "1D" ? run.timeframe : "1h",
+            from: run.from ?? "2024-01-01T00:00:00Z",
+            to: run.to ?? "2024-01-03T00:00:00Z",
+            params: run.strategyParams ?? {},
+          })
+        )
     );
-    selectedRuns.forEach((run, index) => addRun(buildRerun(run, nextIds[index])));
+
     setSelected((prev) => prev.filter((id) => !selectedVisibleIds.includes(id)));
   };
 
@@ -315,5 +284,19 @@ export default function BacktestsPage() {
         )}
       </SurfaceCard>
     </div>
+  );
+}
+
+export default function BacktestsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Загрузка бэктестов...
+        </div>
+      }
+    >
+      <BacktestsPageContent />
+    </Suspense>
   );
 }

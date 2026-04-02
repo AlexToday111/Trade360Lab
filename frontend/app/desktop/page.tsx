@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -25,11 +25,11 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SurfaceCard } from "@/components/shared/surface-card";
 import { DrawdownChart, EquityChart } from "@/features/runs/charts/run-charts";
 import { useRuns } from "@/features/runs/store/run-store";
-import { uploadStrategy } from "@/lib/api/strategies";
+import { fetchStrategyById, uploadStrategy } from "@/lib/api/strategies";
 import { projects, type Project } from "@/lib/demo-data/projects";
 import { getProjectRuns } from "@/lib/project-runs";
 import { getNextRunId } from "@/lib/run-id";
-import type { Run, RunArtifact, RunMetrics, RunParams } from "@/lib/types";
+import type { Run, RunArtifact, RunMetrics, RunParams, Strategy } from "@/lib/types";
 
 const DEFAULT_START_BALANCE_USD = 100_000;
 type UploadState = "idle" | "uploading" | "success" | "error";
@@ -98,20 +98,21 @@ function createDraftRunMetrics(): RunMetrics {
   };
 }
 
-function createCompletedMetrics(strategyName: string): RunMetrics {
-  const seed = strategyName
-    .split("")
-    .reduce((total, char) => total + char.charCodeAt(0), 0);
+function createDefaultStrategyParams(strategy: Strategy) {
+  const schema = strategy.parametersSchema;
+  if (!schema || typeof schema !== "object") {
+    return {};
+  }
 
-  return {
-    pnl: 8 + (seed % 11),
-    sharpe: 1 + (seed % 7) / 10,
-    maxDrawdown: -(4 + (seed % 6)),
-    trades: 120 + (seed % 180),
-    winrate: 48 + (seed % 12),
-    avgTrade: 0.08 + (seed % 5) / 100,
-    feesImpact: -(0.8 + (seed % 5) / 10),
-  };
+  return Object.fromEntries(
+    Object.entries(schema).map(([key, value]) => {
+      if (value && typeof value === "object" && "default" in value) {
+        return [key, (value as { default?: unknown }).default ?? null];
+      }
+
+      return [key, null];
+    })
+  );
 }
 
 function createCompletedArtifacts(): RunArtifact[] {
@@ -153,8 +154,8 @@ function getDesktopStatusPresentation(run: Run) {
   };
 }
 
-export default function DesktopPage() {
-  const { runs, addRun, updateRun, deleteRun } = useRuns();
+function DesktopPageContent() {
+  const { runs, addRun, createRemoteRun, deleteRun } = useRuns();
   const searchParams = useSearchParams();
   const requestedProjectId = searchParams.get("project");
   const strategyFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -279,26 +280,61 @@ export default function DesktopPage() {
     setNewStrategyName("");
   };
 
-  const handleRunAction = (run: Run) => {
-    const executedAt = formatNowAsProjectTimestamp();
+  const handleRunAction = async (run: Run) => {
+    if (!run.strategyId) {
+      setUploadState("error");
+      setUploadError("Для запуска не найден strategyId. Загрузите стратегию заново.");
+      return;
+    }
 
-    updateRun(run.id, {
-      status: "done",
-      createdAt: executedAt,
-      period: "2019-01-01 -> 2024-12-31",
-      params: {
-        ...run.params,
-        period: "2019-01-01 -> 2024-12-31",
-      },
-      metrics: createCompletedMetrics(run.strategy),
-      artifacts: createCompletedArtifacts(),
-      tags: run.tags.filter((tag) => tag !== INVALID_STRATEGY_TAG),
-    });
+    setUploadState("uploading");
+    setUploadError(null);
 
-    touchProject({
-      lastRunId: run.id,
-      lastDataset: run.datasetVersion,
-    });
+    try {
+      const strategy =
+        run.strategyParams !== undefined ? null : await fetchStrategyById(run.strategyId);
+      const strategyParams =
+        run.strategyParams ?? (strategy ? createDefaultStrategyParams(strategy) : {});
+      const exchange = run.exchange ?? "binance";
+      const symbol = run.symbol ?? "BTCUSDT";
+      const interval = run.timeframe && run.timeframe !== "1D" ? run.timeframe : "1h";
+      const from = run.from ?? "2024-01-01T00:00:00Z";
+      const to = run.to ?? "2024-01-03T00:00:00Z";
+
+      const createdRun = await createRemoteRun(
+        {
+          strategyId: run.strategyId,
+          exchange,
+          symbol,
+          interval,
+          from,
+          to,
+          params: strategyParams,
+        },
+        {
+          replaceRunId: run.backendRunId ? undefined : run.id,
+          preserveFields: {
+            strategy: run.strategy,
+            tags: run.tags.filter((tag) => tag !== INVALID_STRATEGY_TAG),
+            artifacts: run.backendRunId ? run.artifacts : createCompletedArtifacts(),
+            config: run.config,
+            commit: run.commit,
+            diff: run.diff,
+            datasetVersion: run.datasetVersion,
+            strategyParams,
+          },
+        }
+      );
+
+      touchProject({
+        lastRunId: createdRun.id,
+        lastDataset: `${exchange}:${symbol}`,
+      });
+      setUploadState("success");
+    } catch (error) {
+      setUploadState("error");
+      setUploadError(toErrorMessage(error, "Запуск стратегии завершился с ошибкой."));
+    }
   };
 
   const handleDeleteRun = (runId: string) => {
@@ -327,22 +363,26 @@ export default function DesktopPage() {
       const uploadedStrategy = await uploadStrategy(selectedFile);
       const timestamp = formatNowAsProjectTimestamp();
       const runId = getNextRunId(runs.map((run) => run.id));
-      const strategyName = uploadedStrategy.filename || selectedFile.name;
+      const strategyName =
+        uploadedStrategy.name?.trim() || uploadedStrategy.fileName || selectedFile.name;
       const initialStatus = uploadedStrategy.status === "VALID" ? "queued" : "failed";
       const datasetVersion = project?.lastDataset ?? "Не выбран";
       const importedRun: Run = {
         id: runId,
+        strategyId: typeof uploadedStrategy.id === "number" ? uploadedStrategy.id : undefined,
         strategy: strategyName,
         datasetVersion,
         period: initialStatus === "queued" ? "Ожидает запуска" : "Импорт завершился с ошибкой",
         timeframe: "1D",
         params: createDraftRunParams(datasetVersion),
+        strategyParams: createDefaultStrategyParams(uploadedStrategy),
         metrics: createDraftRunMetrics(),
         status: initialStatus,
         artifacts: [],
         createdAt: timestamp,
+        errorMessage: uploadedStrategy.validationError,
         commit: "local-import",
-        config: `strategy: ${strategyName}\nsource: upload\n`,
+        config: `strategy: ${strategyName}\nsource: upload\nstrategyId: ${uploadedStrategy.id}\n`,
         tags: [
           `project:${project?.id ?? "unknown"}`,
           IMPORTED_STRATEGY_TAG,
@@ -794,5 +834,19 @@ export default function DesktopPage() {
         </ChartCard>
       </div>
     </div>
+  );
+}
+
+export default function DesktopPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Загрузка рабочего стола...
+        </div>
+      }
+    >
+      <DesktopPageContent />
+    </Suspense>
   );
 }

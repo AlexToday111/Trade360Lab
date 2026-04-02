@@ -29,10 +29,14 @@ import { trades } from "@/lib/demo-data/trades";
 
 export default function RunDetailsPage() {
   const params = useParams();
-  const { getRunById } = useRuns();
+  const { getRunById, isLoading } = useRuns();
   const [isAnalyzerFullscreen, setIsAnalyzerFullscreen] = useState(false);
   const runId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
   const run = runId ? getRunById(runId) : undefined;
+
+  if (isLoading) {
+    return <LoadingState label="Загрузка запуска..." />;
+  }
 
   if (!run) {
     return (
