@@ -51,7 +51,7 @@ public class RunEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @Column(name = "finished_at", nullable = false)
+    @Column(name = "finished_at")
     private Instant finishedAt;
 
     public enum RunStatus {

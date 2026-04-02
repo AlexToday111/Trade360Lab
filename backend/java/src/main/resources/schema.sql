@@ -36,3 +36,6 @@ CREATE TABLE if NOT EXISTS runs (
     created_at timestamptz not null default now(),
     finished_at timestamptz
 );
+
+ALTER TABLE runs
+    ALTER COLUMN finished_at DROP NOT NULL;
