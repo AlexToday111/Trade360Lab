@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +27,11 @@ function escapeCsv(value: string) {
 function parseRunDate(value: string) {
   const parsed = Date.parse(value.replace(" ", "T"));
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function extractIdSearchQuery(value: string) {
+  const match = value.trim().match(/^id\s*[:=]\s*(.+)$/i);
+  return match ? match[1].trim().toLowerCase() : null;
 }
 
 function BacktestsPageContent() {
@@ -62,6 +67,7 @@ function BacktestsPageContent() {
 
   const filteredRuns = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const idQuery = extractIdSearchQuery(searchQuery);
 
     return realRuns
       .filter((run) => {
@@ -69,9 +75,12 @@ function BacktestsPageContent() {
         const timeframeMatch = timeframeFilter === "all" || run.timeframe === timeframeFilter;
         const projectMatch =
           projectFilter === "all" || getRunProjectId(run) === projectFilter;
+        const runId = String(run.id).toLowerCase();
         const searchMatch =
           query.length === 0 ||
-          run.id.toLowerCase().includes(query) ||
+          (idQuery !== null
+            ? runId === idQuery || runId.includes(idQuery)
+            : runId.includes(query)) ||
           run.strategy.toLowerCase().includes(query) ||
           run.datasetVersion.toLowerCase().includes(query);
 
@@ -101,9 +110,9 @@ function BacktestsPageContent() {
     );
   };
 
-  const handleDeleteRun = (id: string) => {
-    deleteRun(id);
-    setSelected((prev) => prev.filter((item) => item !== id));
+  const handleBulkDelete = () => {
+    selectedVisibleIds.forEach((id) => deleteRun(id));
+    setSelected((prev) => prev.filter((id) => !selectedVisibleIds.includes(id)));
   };
 
   const handleBulkExport = () => {
@@ -138,43 +147,81 @@ function BacktestsPageContent() {
       <PageHeader
         title="Бэктесты"
         actions={
-          <Button size="sm" onClick={handleBulkExport} disabled={selectedVisibleCount === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            Экспорт выбранных
-          </Button>
+          <>
+            <Button size="sm" onClick={handleBulkExport} disabled={selectedVisibleCount === 0}>
+              <Download className="mr-2 h-4 w-4" />
+              Экспорт выбранных
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={selectedVisibleCount === 0}
+              style={{ color: "#000000" }}
+              aria-label="Удалить выбранные"
+              title="Удалить выбранные"
+            >
+              <Trash2 className="h-4 w-4" style={{ color: "#000000" }} />
+            </Button>
+          </>
         }
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <SurfaceCard className="py-0" contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3">
+        <SurfaceCard
+          className="py-0"
+          contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3"
+        >
           <div className="text-left text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground">
             Всего
           </div>
-          <div className="text-right text-[2rem] font-semibold leading-none text-foreground">{statusStats.total}</div>
+          <div className="text-right text-[2rem] font-semibold leading-none text-foreground">
+            {statusStats.total}
+          </div>
         </SurfaceCard>
-        <SurfaceCard className="py-0" contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3">
+        <SurfaceCard
+          className="py-0"
+          contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3"
+        >
           <div className="text-left text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground">
             В очереди
           </div>
-          <div className="text-right text-[2rem] font-semibold leading-none text-status-warning">{statusStats.queued}</div>
+          <div className="text-right text-[2rem] font-semibold leading-none text-status-warning">
+            {statusStats.queued}
+          </div>
         </SurfaceCard>
-        <SurfaceCard className="py-0" contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3">
+        <SurfaceCard
+          className="py-0"
+          contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3"
+        >
           <div className="text-left text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground">
             Выполняется
           </div>
-          <div className="text-right text-[2rem] font-semibold leading-none text-status-running">{statusStats.running}</div>
+          <div className="text-right text-[2rem] font-semibold leading-none text-status-running">
+            {statusStats.running}
+          </div>
         </SurfaceCard>
-        <SurfaceCard className="py-0" contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3">
+        <SurfaceCard
+          className="py-0"
+          contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3"
+        >
           <div className="text-left text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground">
             Завершено
           </div>
-          <div className="text-right text-[2rem] font-semibold leading-none text-status-success">{statusStats.done}</div>
+          <div className="text-right text-[2rem] font-semibold leading-none text-status-success">
+            {statusStats.done}
+          </div>
         </SurfaceCard>
-        <SurfaceCard className="py-0" contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3">
+        <SurfaceCard
+          className="py-0"
+          contentClassName="flex min-h-[78px] items-center justify-between gap-3 px-4 py-3"
+        >
           <div className="text-left text-sm font-medium uppercase tracking-[0.08em] text-muted-foreground">
             Ошибки
           </div>
-          <div className="text-right text-[2rem] font-semibold leading-none text-status-failed">{statusStats.failed}</div>
+          <div className="text-right text-[2rem] font-semibold leading-none text-status-failed">
+            {statusStats.failed}
+          </div>
         </SurfaceCard>
       </div>
 
@@ -248,14 +295,17 @@ function BacktestsPageContent() {
       <SurfaceCard
         contentClassName="p-0"
         title="Список запусков"
-        subtitle={`Показано: ${filteredRuns.length}. Выбрано: ${selectedVisibleCount}.`}
+        actions={
+          <div className="text-right text-xs text-muted-foreground">
+            Показано: {filteredRuns.length}. Выбрано: {selectedVisibleCount}.
+          </div>
+        }
       >
         {filteredRuns.length > 0 ? (
           <RunsTable
             runs={filteredRuns}
             selectedIds={selected}
             onToggle={toggleRun}
-            onDelete={handleDeleteRun}
           />
         ) : (
           <div className="m-4 rounded-[14px] border border-dashed border-border bg-panel-subtle p-5 text-sm text-muted-foreground">
