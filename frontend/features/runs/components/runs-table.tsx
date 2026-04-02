@@ -36,9 +36,13 @@ export function RunsTable({
       <TableBody>
         {runs.map((run) => {
           const isSelected = selectedIds.includes(run.id);
-          const selectedCellClassName = isSelected
-            ? "bg-[linear-gradient(135deg,rgba(43,213,118,0.32),rgba(111,247,163,0.18))]"
-            : "";
+          const selectedCellStyle = isSelected
+            ? {
+                background:
+                  "linear-gradient(135deg, rgba(43, 213, 118, 0.32), rgba(111, 247, 163, 0.18))",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+              }
+            : undefined;
 
           return (
             <TableRow
@@ -46,35 +50,36 @@ export function RunsTable({
               className="cursor-pointer hover:bg-panel-subtle"
               onClick={() => onToggle(run.id)}
             >
-              <TableCell className={cn(selectedCellClassName, "shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]")}>
+              <TableCell style={selectedCellStyle}>
                 <RunStatusBadge status={run.status} />
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "font-mono text-xs text-foreground")}>
+              <TableCell className="font-mono text-xs text-foreground" style={selectedCellStyle}>
                 {run.id}
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-muted-foreground")}>
+              <TableCell className="text-xs text-muted-foreground" style={selectedCellStyle}>
                 {run.strategy}
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-muted-foreground")}>
+              <TableCell className="text-xs text-muted-foreground" style={selectedCellStyle}>
                 {run.datasetVersion}
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-muted-foreground")}>
+              <TableCell className="text-xs text-muted-foreground" style={selectedCellStyle}>
                 {run.period}
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-profit")}>
+              <TableCell className="text-xs text-profit" style={selectedCellStyle}>
                 {run.metrics.pnl.toFixed(1)}%
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-muted-foreground")}>
+              <TableCell className="text-xs text-muted-foreground" style={selectedCellStyle}>
                 {run.metrics.sharpe.toFixed(2)}
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-loss")}>
+              <TableCell className="text-xs text-loss" style={selectedCellStyle}>
                 {run.metrics.maxDrawdown.toFixed(1)}%
               </TableCell>
-              <TableCell className={cn(selectedCellClassName, "text-xs text-muted-foreground")}>
+              <TableCell className="text-xs text-muted-foreground" style={selectedCellStyle}>
                 {run.metrics.trades}
               </TableCell>
               <TableCell
-                className={cn(selectedCellClassName, "w-[56px]")}
+                className="w-[56px]"
+                style={selectedCellStyle}
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flex justify-end">

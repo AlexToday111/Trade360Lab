@@ -148,10 +148,11 @@ function BacktestsPageContent() {
               variant="destructive"
               onClick={handleBulkDelete}
               disabled={selectedVisibleCount === 0}
+              className="text-black"
               aria-label="Удалить выбранные"
               title="Удалить выбранные"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 text-black" />
             </Button>
           </>
         }
