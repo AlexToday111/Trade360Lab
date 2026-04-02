@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Download, Repeat } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,7 +31,7 @@ function parseRunDate(value: string) {
 
 function BacktestsPageContent() {
   const searchParams = useSearchParams();
-  const { runs, createRemoteRun, deleteRun } = useRuns();
+  const { runs, deleteRun } = useRuns();
 
   const [selected, setSelected] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,28 +106,6 @@ function BacktestsPageContent() {
     setSelected((prev) => prev.filter((item) => item !== id));
   };
 
-  const handleBulkRerun = async () => {
-    const selectedRuns = realRuns.filter((run) => selectedVisibleIds.includes(run.id));
-
-    await Promise.all(
-      selectedRuns
-        .filter((run) => typeof run.strategyId === "number")
-        .map((run) =>
-          createRemoteRun({
-            strategyId: run.strategyId as number,
-            exchange: run.exchange ?? "binance",
-            symbol: run.symbol ?? "BTCUSDT",
-            interval: run.timeframe && run.timeframe !== "1D" ? run.timeframe : "1h",
-            from: run.from ?? "2024-01-01T00:00:00Z",
-            to: run.to ?? "2024-01-03T00:00:00Z",
-            params: run.strategyParams ?? {},
-          })
-        )
-    );
-
-    setSelected((prev) => prev.filter((id) => !selectedVisibleIds.includes(id)));
-  };
-
   const handleBulkExport = () => {
     const selectedRuns = realRuns.filter((run) => selectedVisibleIds.includes(run.id));
     const header = ["id", "status", "strategy", "dataset", "timeframe", "period", "pnl", "sharpe"];
@@ -160,21 +138,10 @@ function BacktestsPageContent() {
       <PageHeader
         title="Бэктесты"
         actions={
-          <>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleBulkRerun}
-              disabled={selectedVisibleCount === 0}
-            >
-              <Repeat className="mr-2 h-4 w-4" />
-              Повторный запуск
-            </Button>
-            <Button size="sm" onClick={handleBulkExport} disabled={selectedVisibleCount === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              Экспорт выбранных
-            </Button>
-          </>
+          <Button size="sm" onClick={handleBulkExport} disabled={selectedVisibleCount === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Экспорт выбранных
+          </Button>
         }
       />
 
